@@ -1,0 +1,105 @@
+﻿@page "/CreateRequestForm"
+@page "/CreateRequestForm/{CurrentSection}"
+
+<PageTitle>New Request Form</PageTitle>
+
+<PageHeader Title="@PageHeaderTitle"
+            ReferenceNo="@RequestModel.ReferenceNo"
+            WorkflowStatus="@RequestModel.WorkflowStatus" />
+
+<EditForm Model="RequestModel">
+    <div class="d-flex">
+        <div class="flex-fill py-4 px-5">
+            @if (showErrorAlert && RequestModel.EmployeeDetails.HasError && !string.IsNullOrEmpty(RequestModel.EmployeeDetails.ErrorMessage))
+            {
+                <div id="errorAlertTop" class="alert alert-danger alert-dismissible fade show" role="alert">
+                    @((MarkupString)RequestModel.EmployeeDetails.ErrorMessage)
+                    <button type="button" class="btn-close" aria-label="Close" @onclick="DismissErrorAlert"></button>
+                </div>
+            }
+            <div style="display: @(CurrentSection == "EmployeeDetails" ? "block" : "none")">
+                @if (IsModificationRequest)
+                {
+                    <MHA.ELAN.Web.Components.Pages.CreateFormComponents.Modification.CreateEmployeeDetailsModificationTab RequestModel="@RequestModel"
+                                                                                                                                  EmployeeDetailsVM="@RequestModel.EmployeeDetails"
+                                                                                                                                  OnEmployeeDetailsChanged="OnEmployeeDetailsChanged"
+                                                                                                                                  OnEmployeeSelectedLogin="LoadEmployeeDetailsByLogin"
+                                                                                                                                  OnRequestTypeChanged="OnRequestTypeChanged"
+                                                                                                                                  spHostUrl="@spHostUrl"
+                                                                                                                                  accessToken="@accessToken"
+                                                                                                                                  OnSave="HandleSave"
+                                                                                                                                  OnSubmit="HandleSubmit" />
+                }
+                else if (IsTerminationRequest)
+                {
+                    <MHA.ELAN.Web.Components.Pages.CreateFormComponents.Termination.CreateEmployeeDetailsTerminationTab RequestModel="@RequestModel"
+                                                                                                                                EmployeeDetailsVM="@RequestModel.EmployeeDetails"
+                                                                                                                                OnEmployeeDetailsChanged="OnEmployeeDetailsChanged"
+                                                                                                                                OnEmployeeSelectedLogin="LoadEmployeeDetailsByLogin"
+                                                                                                                                OnRequestTypeChanged="OnRequestTypeChanged"
+                                                                                                                                spHostUrl="@spHostUrl"
+                                                                                                                                accessToken="@accessToken"
+                                                                                                                                OnSave="HandleSave"
+                                                                                                                                OnSubmit="HandleSubmit" />
+                }
+                else
+                {
+                    <CreateEmployeeDetailsTab RequestModel="@RequestModel"
+                                              EmployeeDetailsVM="@RequestModel.EmployeeDetails"
+                                              OnEmployeeDetailsChanged="OnEmployeeDetailsChanged"
+                                              OnRequestTypeChanged="OnRequestTypeChanged"
+                                              spHostUrl="@spHostUrl"
+                                              accessToken="@accessToken"
+                                              OnSave="HandleSave"
+                                              OnSubmit="HandleSubmit" />
+                }
+            </div>
+
+            <div style="display: @(CurrentSection == "ITRequirements" ? "block" : "none")">
+                @if (IsModificationRequest)
+                {
+                    <MHA.ELAN.Web.Components.Pages.CreateFormComponents.Modification.CreateITRequirementsModificationTab ITRequirementsVM="@RequestModel.ITRequirementsVM"
+                                                                                                                                 DesignationFromEmployeeDetails="@RequestModel.EmployeeDetails.EmployeeDetailsVM.DesignationTitle"
+                                                                                                                                 DesignationIDFromEmployeeDetails="@RequestModel.EmployeeDetails.EmployeeDetailsVM.DesignationID"
+                                                                                                                                 RequestModel="@RequestModel" />
+                }
+                else if (IsTerminationRequest)
+                {
+                    <MHA.ELAN.Web.Components.Pages.CreateFormComponents.Termination.CreateITRequirementsTerminationTab ITRequirementsVM="@RequestModel.ITRequirementsVM"
+                                                                                                                               DesignationFromEmployeeDetails="@RequestModel.EmployeeDetails.EmployeeDetailsVM.DesignationTitle"
+                                                                                                                               DesignationIDFromEmployeeDetails="@RequestModel.EmployeeDetails.EmployeeDetailsVM.DesignationID"
+                                                                                                                               RequestModel="@RequestModel" />
+                }
+                else
+                {
+                    <CreateITRequirementsTab ITRequirementsVM="@RequestModel.ITRequirementsVM"
+                                             DesignationFromEmployeeDetails="@RequestModel.EmployeeDetails.EmployeeDetailsVM.DesignationTitle"
+                                             DesignationIDFromEmployeeDetails="@RequestModel.EmployeeDetails.EmployeeDetailsVM.DesignationID" />
+                }
+            </div>
+
+            <div style="display: @(CurrentSection == "Hardware" ? "block" : "none")">
+                @if (IsModificationRequest)
+                {
+                    <MHA.ELAN.Web.Components.Pages.CreateFormComponents.Modification.CreateHardwareModificationTab HardwareVM="@RequestModel.HardwareVM"
+                                                                                                                           DesignationFromEmployeeDetails="@RequestModel.EmployeeDetails.EmployeeDetailsVM.DesignationTitle"
+                                                                                                                           DesignationIDFromEmployeeDetails="@RequestModel.EmployeeDetails.EmployeeDetailsVM.DesignationID"
+                                                                                                                           RequestModel="@RequestModel" />
+                }
+                else if (IsTerminationRequest)
+                {
+                    <MHA.ELAN.Web.Components.Pages.CreateFormComponents.Termination.CreateHardwareTerminationTab HardwareVM="@RequestModel.HardwareVM"
+                                                                                                                         DesignationFromEmployeeDetails="@RequestModel.EmployeeDetails.EmployeeDetailsVM.DesignationTitle"
+                                                                                                                         DesignationIDFromEmployeeDetails="@RequestModel.EmployeeDetails.EmployeeDetailsVM.DesignationID"
+                                                                                                                         RequestModel="@RequestModel" />
+                }
+                else
+                {
+                    <CreateHardwareTab HardwareVM="@RequestModel.HardwareVM"
+                                       DesignationFromEmployeeDetails="@RequestModel.EmployeeDetails.EmployeeDetailsVM.DesignationTitle"
+                                       DesignationIDFromEmployeeDetails="@RequestModel.EmployeeDetails.EmployeeDetailsVM.DesignationID" />
+                }
+            </div>
+        </div>
+    </div>
+</EditForm>

@@ -1,0 +1,48 @@
+﻿@inject NavigationManager Navigation
+@inject NavigationHelper NavigationHelper
+
+<div class="nav-scrollable">
+    <nav class="flex-column">
+        <!-- Employee Details -->
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="@GetSectionUrl("EmployeeDetails")" ActiveClass="active">
+                <span class="bi bi-person-fill me-2"></span> Employee Details
+            </NavLink>
+        </div>
+
+        <!-- IT Requirements -->
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="@GetSectionUrl("ITRequirements")" ActiveClass="active">
+                <span class="bi bi-laptop me-2"></span> IT Requirements
+            </NavLink>
+        </div>
+
+        <!-- Hardware -->
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="@GetSectionUrl("Hardware")" ActiveClass="active">
+                <span class="bi bi-hdd me-2"></span> Hardware
+            </NavLink>
+        </div>
+
+        <!--Workflow History-->
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="@GetSectionUrl("WorkflowHistory")" ActiveClass="active">
+                <span class="bi bi-clock-history" aria-hidden="true"></span> Workflow History
+            </NavLink>
+        </div>
+
+        <!--Changes-->
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="@GetSectionUrl("Changes")" ActiveClass="active">
+                <span class="bi bi-file-diff-fill" aria-hidden="true"></span> Changes
+            </NavLink>
+        </div>
+    </nav>
+</div>
+
+@code {
+    private string GetSectionUrl(string section)
+    {
+        return NavigationHelper.BuildUrl($"/ViewRequestForm/{section}");
+    }
+}

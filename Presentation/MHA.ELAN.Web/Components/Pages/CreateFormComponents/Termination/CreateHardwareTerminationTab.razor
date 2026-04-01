@@ -1,0 +1,202 @@
+﻿@inject TokenHelper TokenHelper
+@inject RequestBL RequestBL
+
+<h3 class="task-title">Hardware</h3>
+<div class="task-underline"></div>
+
+@if (HardwareVM.RequestModelHasError && !string.IsNullOrEmpty(HardwareVM.RequestModelErrorMessage))
+{
+    <div class="alert alert-danger" role="alert">
+        @((MarkupString)HardwareVM.RequestModelErrorMessage)
+    </div>
+}
+else
+{
+    <div class="hardware-section">
+        <!-- Designation -->
+        <div class="row mb-3">
+            <div class="col-auto d-flex align-items-center mb-2">
+                <label class="form-label mb-0">Designation:</label>
+            </div>
+            <div class="col-md-4">
+                @if (string.IsNullOrWhiteSpace(HardwareVM.Designation))
+                {
+                    <div class="text-danger">Please select a Designation in Employee Details.</div>
+                }
+                else
+                {
+                    <div class="fw-bold">@HardwareVM.Designation</div>
+                }
+            </div>
+        </div>
+
+        <!-- Assigned Items -->
+        <div class="row mb-2 mt-4">
+            <div class="col-12 d-flex justify-content-between align-items-center">
+                <h3 class="task-subtitle">Assigned Items</h3>
+            </div>
+        </div>
+
+        <table class="table table-bordered">
+            <thead class="table-dark text-center">
+                <tr>
+                    <th class="required-asterisk" style="width: 40%;">Item</th>
+                    <th class="required-asterisk" style="width: 10%;">Quantity</th>
+                    <th style="width: 20%;">Department</th>
+                    <th style="width: 25%;">Remarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (HardwareVM.AssignedItems.Count == 0)
+                {
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">No items assigned.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var entry in HardwareVM.AssignedItems)
+                    {
+                        <tr class="align-middle">
+                            <td>
+                                @if (entry.IsReturned)
+                                {
+                                    <span class="text-decoration-line-through text-muted">
+                                        @entry.ItemTitle
+                                    </span>
+                                    <div class="text-danger small fst-italic">
+                                        This item has been returned
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span>@entry.ItemTitle</span>
+                                }
+                            </td>
+
+                            <td class="text-center">@entry.Quantity</td>
+
+                            <td class="text-center">
+                                @HardwareVM.HardwareDefinitions.FirstOrDefault(d => d.ItemID == entry.ItemID)?.DepartmentTitle
+                            </td>
+
+                            <td>@entry.Remarks</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public ViewModelHardware HardwareVM { get; set; }
+    [Parameter, EditorRequired] public ViewModelRequest RequestModel { get; set; }
+    [Parameter] public string DesignationFromEmployeeDetails { get; set; }
+    [Parameter] public int? DesignationIDFromEmployeeDetails { get; set; }
+
+    private int? _lastDesignationId;
+    private bool _hardwareOriginalsInitialized = false;
+    private CancellationTokenSource _errorAlertCts;
+
+    protected override void OnParametersSet()
+    {
+        if (DesignationIDFromEmployeeDetails != _lastDesignationId)
+        {
+            if (HardwareVM.AssignedItems != null && HardwareVM.AssignedItems.Count == 0)
+            {
+                HardwareVM.AssignedItems.Clear();
+            }
+            _lastDesignationId = DesignationIDFromEmployeeDetails;
+        }
+        SetDesignationFromParent();
+        InitializeOriginalHardwareState();
+        SyncSelectionsToViewModel();
+    }
+
+    private IEnumerable<DropDownListItem> GetAvailableItems(int currentRow)
+    {
+        return HardwareVM.HardwareItemList;
+    }
+
+    private void SetDesignationFromParent()
+    {
+        HardwareVM.Designation ??= DesignationFromEmployeeDetails;
+
+        if (DesignationIDFromEmployeeDetails > 0)
+        {
+            HardwareVM.Designation = DesignationFromEmployeeDetails;
+        }
+        else
+        {
+            HardwareVM.Designation = string.Empty;
+        }
+    }
+
+    public void SyncSelectionsToViewModel()
+    {
+        HardwareVM.SelectedHardwareItems.Clear();
+        var now = DateTime.Now;
+
+        foreach (var ai in HardwareVM.AssignedItems
+                                      .Where(x => x.DepartmentID.HasValue && x.ItemID.HasValue))
+        {
+            var ddlDept = HardwareVM.DepartmentList
+                             .FirstOrDefault(d => int.TryParse(d.Value, out var id)
+                                                && id == ai.DepartmentID.Value);
+
+            ai.ItemTitle = HardwareVM.HardwareDefinitions
+                     .First(d => d.ItemID == ai.ItemID)
+                     .ItemTitle;
+
+            var hw = new Hardware
+            {
+                ID = ai.ID,
+                DepartmentID = ai.DepartmentID.Value,
+                DepartmentTitle = ddlDept?.Text ?? string.Empty,
+                ItemID = ai.ItemID.Value,
+                ItemTitle = ai.ItemTitle,
+
+                Quantity = ai.Quantity,
+                RemarkHistory = ai.Remarks ?? string.Empty,
+                Model = ai.Model,
+                SerialNumber = ai.SerialNumber,
+
+                DateAssigned = now,
+                // IsReturned = false,
+                // DateReturned = null,
+                // IsReceived = false,
+                // DateReceived = null,
+
+                IsTempRemoved = ai.IsTempRemoved,
+                TempStatus = ai.TempStatus ?? string.Empty
+            };
+
+            HardwareVM.SelectedHardwareItems.Add(hw);
+        }
+    }
+
+    private bool IsTerminationRequest =>
+        RequestModel != null &&
+        RequestModel.RequestType == ConstantHelper.RequestForm.RequestType.TerminationRequestType;
+
+    private bool IsHardwareTabDisabled =>
+        IsTerminationRequest && !RequestModel.ModifyHardware;
+
+    private void InitializeOriginalHardwareState()
+    {
+        if (!_hardwareOriginalsInitialized && HardwareVM.AssignedItems.Any())
+        {
+            foreach (var hw in HardwareVM.AssignedItems)
+            {
+                hw.OriginalItemID = hw.ItemID;
+                hw.OriginalQuantity = hw.Quantity;
+                hw.OriginalRemarks = hw.Remarks;
+                hw.OriginalRemoved = hw.IsTempRemoved;
+            }
+
+            _hardwareOriginalsInitialized = true;
+        }
+    }
+
+}

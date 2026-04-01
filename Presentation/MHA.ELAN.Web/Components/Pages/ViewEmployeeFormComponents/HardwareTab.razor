@@ -1,0 +1,66 @@
+﻿<h3 class="task-title">Hardware</h3>
+<div class="task-underline"></div>
+
+<div class="hardware-section">
+    <!-- Designation -->
+    <div class="row mb-3">
+        <div class="col-auto d-flex align-items-center mb-2">
+            <label class="form-label mb-0">Designation:</label>
+        </div>
+        <div class="col-md-4">
+            @if (string.IsNullOrWhiteSpace(EmployeeDetails.DesignationTitle))
+            {
+                <div class="fw-bold">No designation available.</div>
+            }
+            else
+            {
+                <div class="fw-bold">@EmployeeDetails.DesignationTitle</div>
+            }
+        </div>
+    </div>
+
+    <!-- Assigned Items Table -->
+    <div class="row mb-2 mt-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <h3 class="task-subtitle">Assigned Items</h3>
+        </div>
+    </div>
+
+    <table class="table table-bordered">
+        <thead class="table-dark text-center">
+            <tr>
+                <th>Item</th>
+                <th>Quantity</th>
+                <th>Department</th>
+                <th>Remarks</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Hardwares.Count == 0)
+            {
+                <tr>
+                    <td colspan="4" class="text-center text-muted">No items assigned.</td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var item in Hardwares)
+                {
+                    <tr class="align-middle">
+                        <td>@item.ItemTitle</td>
+                        <td class="text-center">@item.Quantity</td>
+                        <td>@item.DepartmentTitle</td>
+                        <td>@item.Remarks</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public ViewFinalEmployeeDetailsItem EmployeeDetails { get; set; }
+    [Parameter, EditorRequired]
+    public List<ViewFinalHardwareItem> Hardwares { get; set; }
+}

@@ -1,0 +1,60 @@
+﻿@page "/Reports"
+@attribute [Authorize]
+@using MHA.ELAN.Framework.JSONConstants
+@using Microsoft.Extensions.Options
+
+@inject LogHelper LogHelper
+@inject TokenHelper TokenHelper
+@inject ReportBL ReportBL
+
+<PageTitle>Report Listing</PageTitle>
+
+<div class="p-4">
+    <h2 class="pageTitle mt-2">Report</h2>
+
+    @if (report.IsAuthorized)
+    {
+        @foreach (KeyValuePair<string, string> reportLink in report.ReportLinks)
+        {
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card shadow-sm">
+                        <div class="list-group list-group-flush">
+                            <a href="@reportLink.Value" target="_blank" class="list-group-item list-group-item-action">@reportLink.Key</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <MHA.ELAN.Web.Components.PartialComponents.AccessDenied />
+    }
+
+</div>
+
+
+
+@code {
+    [SupplyParameterFromQuery(Name = ConstantHelper.ParameterQuery.SPHostUrl)]
+    [Parameter]
+    public string spHostUrl { get; set; }
+    public string accessToken = string.Empty;
+
+    ViewModelReportListing report = new ViewModelReportListing();
+
+    protected override async Task OnInitializedAsync()
+    {
+        accessToken = await TokenHelper.GetUserAccessToken();
+
+        try
+        {
+            report = await ReportBL.InitReportListing(spHostUrl, accessToken);
+        }
+        catch (Exception ex)
+        {
+            LogHelper.LogMessage("ReportBL - InitReportListing Error:" + ex.ToString());
+        }
+    }
+}

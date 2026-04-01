@@ -1,0 +1,299 @@
+﻿@inject WorkflowStateService WorkflowStateService
+
+<h3 class="task-title">IT Requirements</h3>
+<div class="task-underline"></div>
+
+<div class="it-section">
+    <!-- Designation -->
+    <div class="row mb-3">
+        <div class="col-auto d-flex align-items-center mb-2">
+            <label class="form-label mb-0">Designation:</label>
+        </div>
+        <div class="col-md-4">
+            <div class="fw-bold">@EmployeeDetails.EmployeeDetailsVM.DesignationTitle</div>
+        </div>
+    </div>
+
+    <!-- Infra -->
+    @if (VisibilitySettings.ShowInfra)
+    {
+        <h3 class="task-subtitle mb-3">Infra</h3>
+
+        @if (VisibilitySettings.ShowEmployeePeoplePicker && !IsModificationRequest)
+        {
+            <!-- Employee Login -->
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label required-asterisk">Employee Name</label>
+                </div>
+                <div class="col-md-4">
+                    <PeoplePickerComponent SpHostUrl="@spHostUrl"
+                                           AccessToken="@accessToken"
+                                           @bind-SelectedUser="@EmployeeDetails.EmployeeDetailsVM.Employee"
+                                           OnUserSelected="OnEmployeeSelected" />
+                </div>
+            </div>
+        }
+
+        @if (ITRequirements == null || !ITRequirements.Any())
+        {
+            <div class="fst-italic text-muted">No infra selected.</div>
+        }
+        else
+        {
+            <table class="table table-bordered">
+                <thead class="table-dark text-center">
+                    <tr>
+                        <th style="min-width: @ConstantHelper.TableColumnWidth.ITRequirements.Item;">Item</th>
+                        <th>Added?</th>
+                        <th>Removed?</th>
+                        <th>Date Added</th>
+                        <th>Date Removed</th>
+                        <th style="min-width: @ConstantHelper.TableColumnWidth.ITRequirements.Remarks;">Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var option in ITRequirements.Where(x => x.ITRequirementsVM.Type == ConstantHelper.SPColumnValue.ITRequirements.ItemType.Infra))
+                    {
+                        <tr class="align-middle">
+                            <td style="width: 25%;">
+                                @option.ITRequirementsVM.ItemTitle
+                            </td>
+                            <td style="width: 5%;" class="text-center">
+                                <InputCheckbox class="form-check-input"
+                                               Value="option.ITRequirementsVM.IsAdded"
+                                               ValueChanged="@(val => OnAddedCheckboxChanged(val, option.ITRequirementsVM))"
+                                               ValueExpression="() => option.ITRequirementsVM.IsAdded"
+                                               disabled="@IsReadOnly()" />
+                            </td>
+                            <td style="width: 5%;" class="text-center">
+                                <InputCheckbox class="form-check-input"
+                                               Value="option.ITRequirementsVM.IsRemoved"
+                                               ValueChanged="@(val => OnRemovedCheckboxChanged(val, option.ITRequirementsVM))"
+                                               ValueExpression="() => option.ITRequirementsVM.IsRemoved"
+                                               disabled="@IsReadOnly()" />
+                            </td>
+                            <td style="width: 12%;">
+                                <RadzenDatePicker class="text-center" @bind-Value="option.ITRequirementsVM.DateAdded" ReadOnly="@(option.ITRequirementsVM.IsAdded != true)" Disabled="@IsReadOnly()" DateFormat="@ConstantHelper.DateFormat.DefaultDateFormat" ShowButton="false" Placeholder="@ConstantHelper.DateFormat.DefaultDateFormat" />
+                            </td>
+                            <td style="width: 12%;">
+                                <RadzenDatePicker class="text-center" @bind-Value="option.ITRequirementsVM.DateRemoved" ReadOnly="@(option.ITRequirementsVM.IsRemoved != true)" Disabled="@IsReadOnly()" DateFormat="@ConstantHelper.DateFormat.DefaultDateFormat" ShowButton="false" Placeholder="@ConstantHelper.DateFormat.DefaultDateFormat" />
+                            </td>
+                            <td style="width: 41%;">
+                                <InputTextArea class="form-control form-control-sm" @bind-Value="option.ITRequirementsVM.Remark" readonly="@(option.ITRequirementsVM.IsAdded != true && option.ITRequirementsVM.IsRemoved != true)" placeholder="Enter Remark here" disabled="@IsReadOnly()" />
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    }
+
+    <!-- Applications -->
+    @if (VisibilitySettings.ShowApplications)
+    {
+        <h3 class="task-subtitle mt-3 mb-3">Applications</h3>
+        @if (ITRequirements == null || !ITRequirements.Any())
+        {
+            <div class="fst-italic text-muted">No applications selected.</div>
+        }
+        else
+        {
+            <table class="table table-bordered">
+                <thead class="table-dark text-center">
+                    <tr>
+                        <th style="min-width: @ConstantHelper.TableColumnWidth.ITRequirements.Item;">Item</th>
+                        <th>Added?</th>
+                        <th>Removed?</th>
+                        <th>Date Added</th>
+                        <th>Date Removed</th>
+                        <th style="min-width: @ConstantHelper.TableColumnWidth.ITRequirements.Remarks;">Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var option in ITRequirements.Where(x => x.ITRequirementsVM.Type == ConstantHelper.SPColumnValue.ITRequirements.ItemType.Applications))
+                    {
+                        <tr class="align-middle">
+                            <td style="width: 25%;">
+                                @option.ITRequirementsVM.ItemTitle
+                            </td>
+                            <td style="width: 5%;" class="text-center">
+                                <InputCheckbox class="form-check-input"
+                                               Value="option.ITRequirementsVM.IsAdded"
+                                               ValueChanged="@(val => OnAddedCheckboxChanged(val, option.ITRequirementsVM))"
+                                               ValueExpression="() => option.ITRequirementsVM.IsAdded"
+                                               disabled="@IsReadOnly()" />
+                            </td>
+                            <td style="width: 5%;" class="text-center">
+                                <InputCheckbox class="form-check-input"
+                                               Value="option.ITRequirementsVM.IsRemoved"
+                                               ValueChanged="@(val => OnRemovedCheckboxChanged(val, option.ITRequirementsVM))"
+                                               ValueExpression="() => option.ITRequirementsVM.IsRemoved"
+                                               disabled="@IsReadOnly()" />
+                            </td>
+                            <td style="width: 12%;">
+                                <RadzenDatePicker class="text-center" @bind-Value="option.ITRequirementsVM.DateAdded" ReadOnly="@(option.ITRequirementsVM.IsAdded != true)" Disabled="@IsReadOnly()" DateFormat="@ConstantHelper.DateFormat.DefaultDateFormat" ShowButton="false" Placeholder="@ConstantHelper.DateFormat.DefaultDateFormat" />
+                            </td>
+                            <td style="width: 12%;">
+                                <RadzenDatePicker class="text-center" @bind-Value="option.ITRequirementsVM.DateRemoved" ReadOnly="@(option.ITRequirementsVM.IsRemoved != true)" Disabled="@IsReadOnly()" DateFormat="@ConstantHelper.DateFormat.DefaultDateFormat" ShowButton="false" Placeholder="@ConstantHelper.DateFormat.DefaultDateFormat" />
+                            </td>
+                            <td style="width: 41%;">
+                                <InputTextArea class="form-control form-control-sm" @bind-Value="option.ITRequirementsVM.Remark" readonly="@(option.ITRequirementsVM.IsAdded != true && option.ITRequirementsVM.IsRemoved != true)" placeholder="Enter Remark here" disabled="@IsReadOnly()" />
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    }
+
+    <!-- Folder Permissions -->
+    @if (VisibilitySettings.ShowFolderPermission)
+    {
+        <h3 class="task-subtitle mt-4">Folder Permissions</h3>
+        @if (FolderPermissions == null || !FolderPermissions.Any())
+        {
+            <div class="text-muted fst-italic">No folders added.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-bordered tableFixHead">
+                    <thead class="table-dark text-center">
+                        <tr>
+                            <th class="sticky-header" style="min-width:@ConstantHelper.TableColumnWidth.ITRequirements.Item;">Folder Name / Path</th>
+                            <th>Read</th>
+                            <th>Write</th>
+                            <th>Delete</th>
+                            <th>Status</th>
+                            <th>Added?</th>
+                            <th>Removed?</th>
+                            <th>Date Added</th>
+                            <th>Date Removed</th>
+                            <th style="min-width: @ConstantHelper.TableColumnWidth.ITRequirements.Remarks;">Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var folder in FolderPermissions)
+                        {
+                            <tr class="align-middle">
+                                <td class="sticky-column">
+                                    @folder.NameOrPath
+                                </td>
+                                <td class="text-center">
+                                    <i class="bi @(folder.IsRead ? "bi-check-circle text-success" : "bi-x-circle text-danger")"></i>
+                                </td>
+                                <td class="text-center">
+                                    <i class="bi @(folder.IsWrite ? "bi-check-circle text-success" : "bi-x-circle text-danger")"></i>
+                                </td>
+                                <td class="text-center">
+                                    <i class="bi @(folder.IsDelete ? "bi-check-circle text-success" : "bi-x-circle text-danger")"></i>
+                                </td>
+                                <td>
+                                    @folder.Status
+                                </td>
+                                <td class="text-center">
+                                    <InputCheckbox class="form-check-input"
+                                                   Value="folder.IsAdded"
+                                                   ValueChanged="@(val => OnAddedCheckboxChanged(val, folder))"
+                                                   ValueExpression="() => folder.IsAdded"
+                                                   disabled="@IsReadOnly()" />
+                                </td>
+                                <td class="text-center">
+                                    <InputCheckbox class="form-check-input"
+                                                   Value="folder.IsRemoved"
+                                                   ValueChanged="@(val => OnRemovedCheckboxChanged(val, folder))"
+                                                   ValueExpression="() => folder.IsRemoved"
+                                                   disabled="@IsReadOnly()" />
+                                </td>
+                                <td>
+                                    <RadzenDatePicker class="text-center" @bind-Value="folder.DateAdded" ReadOnly="@(folder.IsAdded != true)" Disabled="@IsReadOnly()" DateFormat="@ConstantHelper.DateFormat.DefaultDateFormat" ShowButton="false" Placeholder="@ConstantHelper.DateFormat.DefaultDateFormat" />
+                                </td>
+                                <td>
+                                    <RadzenDatePicker class="text-center" @bind-Value="folder.DateRemoved" ReadOnly="@(folder.IsRemoved != true)" Disabled="@IsReadOnly()" DateFormat="@ConstantHelper.DateFormat.DefaultDateFormat" ShowButton="false" Placeholder="@ConstantHelper.DateFormat.DefaultDateFormat" />
+                                </td>
+                                <td>
+                                    <InputTextArea class="form-control text-center" @bind-Value="folder.Remark" readonly="@(folder.IsAdded != true && folder.IsRemoved != true)" placeholder="Enter Remark here" disabled="@IsReadOnly()" />
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public RequestFormVisibilitySettings VisibilitySettings { get; set; }
+    [Parameter, EditorRequired]
+    public ViewRequestItem Request { get; set; }
+    [Parameter, EditorRequired]
+    public ViewModelEmployeeDetails EmployeeDetails { get; set; }
+    [Parameter, EditorRequired]
+    public List<ViewModelITRequirements> ITRequirements { get; set; }
+    [Parameter, EditorRequired]
+    public List<ViewModelFolderPermission> FolderPermissions { get; set; }
+    [Parameter, EditorRequired]
+    public string spHostUrl { get; set; }
+    [Parameter, EditorRequired]
+    public string accessToken { get; set; }
+
+    private bool IsReadOnly()
+    {
+        return Request.WorkflowStatus == ConstantHelper.WorkflowStatus.PENDING_REPORTING_MANAGER_APPROVAL
+        || Request.WorkflowStatus == ConstantHelper.WorkflowStatus.PENDING_DEPARTMENT_ADMIN_ACTION
+        || Request.WorkflowStatus == ConstantHelper.WorkflowStatus.PENDING_ACKNOWLEDGEMENT;
+    }
+
+    private void OnAddedCheckboxChanged<T>(bool value, T item) where T : IItemWithStatus
+    {
+        item.IsAdded = value;
+        item.DateAdded = value ? item.DateAdded ?? DateTime.Today : null;
+
+        if (!item.IsAdded && !item.IsRemoved)
+        {
+            item.Remark = string.Empty;
+        }
+    }
+
+    private void OnRemovedCheckboxChanged<T>(bool value, T item) where T : IItemWithStatus
+    {
+        item.IsRemoved = value;
+        item.DateRemoved = value ? item.DateRemoved ?? DateTime.Today : null;
+
+        if (!item.IsAdded && !item.IsRemoved)
+        {
+            item.Remark = string.Empty;
+        }
+    }
+
+    private void OnEmployeeSelected(PeoplePickerUser user)
+    {
+        if (user != null)
+        {
+            EmployeeDetails.EmployeeDetailsVM.EmployeeName = user.Name;
+            EmployeeDetails.EmployeeDetailsVM.EmployeeEmail = user.Email;
+            EmployeeDetails.EmployeeDetailsVM.EmployeeLogin = user.Login;
+        }
+        else
+        {
+            EmployeeDetails.EmployeeDetailsVM.EmployeeName = null;
+            EmployeeDetails.EmployeeDetailsVM.EmployeeEmail = null;
+            EmployeeDetails.EmployeeDetailsVM.EmployeeLogin = null;
+        }
+
+        StateHasChanged();
+    }
+
+    private bool IsModificationRequest =>
+        EmployeeDetails != null && UpdateTypeRequests.Contains(EmployeeDetails.RequestType);
+
+    private static readonly HashSet<string> UpdateTypeRequests = new()
+    {
+        ConstantHelper.RequestForm.RequestType.ModificationRequestType,
+        ConstantHelper.RequestForm.RequestType.TransferRequestType,
+        ConstantHelper.RequestForm.RequestType.PromotionRequestType
+    };
+}

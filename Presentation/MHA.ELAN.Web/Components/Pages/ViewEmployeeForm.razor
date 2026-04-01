@@ -1,0 +1,162 @@
+﻿@page "/ViewEmployeeForm"
+@page "/ViewEmployeeForm/{CurrentSection}"
+@attribute [Authorize]
+@inject EmployeeBL EmployeeBL
+@inject NavigationManager Navigation
+@inject NavigationHelper NavigationHelper
+@inject TokenHelper TokenHelper
+@inject LogHelper LogHelper
+@inject IJSRuntime JS
+
+<PageTitle>View Employee Form</PageTitle>
+
+@* <PageHeader Title="View Employee Form"
+            ReferenceNo="@ViewEmployeeFormModel.RequestItem.ReferenceNo"
+            WorkflowStatus="@ViewEmployeeFormModel.RequestItem.WorkflowStatus" /> *@
+
+<div class="d-flex justify-content-between align-items-center text-white px-3"
+     style="background-color: black; height: 60px;">
+    <div style="font-size: 1.2rem;">
+        <strong>View Employee Form</strong>
+    </div>
+    <div style="font-size: 0.8rem;">
+        <div>
+            <span style="display: inline-block; width: 100px; text-align: left;">
+                Employee Name
+            </span>
+            <span>: </span>
+            <span>@(string.IsNullOrWhiteSpace(ViewEmployeeFormModel.EmployeeDetailsItem.EmployeeName) ? " -" : ViewEmployeeFormModel.EmployeeDetailsItem.EmployeeName)</span>
+        </div>
+        @*         <div>
+            <span style="display: inline-block; width: 100px; text-align: left;">
+                Workflow Status
+            </span>
+            <span>: </span>
+            <span>@(string.IsNullOrWhiteSpace(WorkflowStatus) ? " -" : WorkflowStatus)</span>
+        </div> *@
+    </div>
+</div>
+
+<div class="d-flex">
+    <div class="flex-fill py-4 px-5">
+        @if (ViewEmployeeFormModel.IsLoaded && ViewEmployeeFormModel.EmployeeDetailsItem.ID == null)
+        {
+            <div class="alert alert-danger m-3" role="alert">
+                <strong>Error:</strong> Employee not available!
+            </div>
+        }
+        else if (ViewEmployeeFormModel.IsLoaded)
+        {
+            <div style="display: @(CurrentSection == "EmployeeDetails" ? "block" : "none")">
+                <MHA.ELAN.Web.Components.Pages.ViewEmployeeFormComponents.EmployeeDetailsTab EmployeeDetails="@ViewEmployeeFormModel.EmployeeDetailsItem" />
+            </div>
+            <div style="display: @(CurrentSection == "ITRequirements" ? "block" : "none")">
+                <MHA.ELAN.Web.Components.Pages.ViewEmployeeFormComponents.ITRequirementsTab EmployeeDetails="@ViewEmployeeFormModel.EmployeeDetailsItem" ITRequirements="@ViewEmployeeFormModel.ITRequirementsItems" FolderPermissions="@ViewEmployeeFormModel.FolderPermissionsItems" />
+            </div>
+            <div style="display: @(CurrentSection == "Hardware" ? "block" : "none")">
+                <MHA.ELAN.Web.Components.Pages.ViewEmployeeFormComponents.HardwareTab EmployeeDetails="@ViewEmployeeFormModel.EmployeeDetailsItem" Hardwares="@ViewEmployeeFormModel.HardwareItems" />
+            </div>
+            <div style="display: @(CurrentSection == "Request" ? "block" : "none")">
+                <MHA.ELAN.Web.Components.Pages.ViewEmployeeFormComponents.RequestTab Request="@ViewEmployeeFormModel.RequestItem" />
+            </div>
+        }
+    </div>
+</div>
+<div class="d-flex justify-content-end gap-2 mb-3 px-3">
+    <button type="button" class="btn btn-outline-dark" @onclick="Close">Close</button>
+</div>
+
+@code {
+    // ================================
+    // Parameters
+    // ================================
+    [SupplyParameterFromQuery(Name = ConstantHelper.ParameterQuery.SPHostUrl)]
+    [Parameter]
+    public string spHostUrl { get; set; }
+    public string accessToken = string.Empty;
+
+    [SupplyParameterFromQuery(Name = ConstantHelper.ParameterQuery.EmployeeId)]
+    [Parameter]
+    public string EmployeeID { get; set; }
+
+    [Parameter]
+    public string CurrentSection { get; set; } = "EmployeeDetails";
+
+    // ================================
+    // Properties
+    // ================================
+    public ViewModelViewEmployeeForm ViewEmployeeFormModel { get; set; } = new();
+
+    // ================================
+    // Load Data
+    // ================================
+    protected override async Task OnInitializedAsync()
+    {
+        accessToken = await TokenHelper.GetUserAccessToken();
+
+        // await LoadData();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadData();
+
+            ViewEmployeeFormModel.IsLoaded = true;
+
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("showSwalGeneralLoading", "Loading Employee Data", "Please wait while we load the employee data...");
+
+            ViewEmployeeFormModel.EmployeeID = Convert.ToInt32(EmployeeID);
+            ViewEmployeeFormModel = await EmployeeBL.InitEmployeeDisplayForm(ViewEmployeeFormModel, spHostUrl, accessToken);
+
+            await JS.InvokeVoidAsync("Swal.close");
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("Swal.close");
+            await JS.InvokeVoidAsync("showSwalError", "Failed to load employee data.");
+
+            LogHelper.LogMessage("ViewEmployeeForm - LoadData Error: " + ex.ToString());
+        }
+    }
+
+    // ================================
+    // Lifecycle
+    // ================================
+    protected override void OnParametersSet()
+    {
+        EnsureValidSection();
+    }
+
+    // ================================
+    // Utility Methods
+    // ================================
+    private void EnsureValidSection()
+    {
+        var allowedSections = new[] { "EmployeeDetails", "ITRequirements", "Hardware", "Request" };
+        if (!allowedSections.Contains(CurrentSection))
+        {
+            CurrentSection = "EmployeeDetails";
+        }
+    }
+
+    private void Close()
+    {
+        Navigation.NavigateTo(NavigationHelper.BuildUrl("/EmployeeListing"));
+    }
+
+    private async Task OnAdminWorkflowHistoryChanged()
+    {
+        await LoadData();
+        StateHasChanged();
+    }
+}

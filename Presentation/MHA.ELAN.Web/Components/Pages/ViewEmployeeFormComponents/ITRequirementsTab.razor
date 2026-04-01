@@ -1,0 +1,101 @@
+﻿<h3 class="task-title">IT Requirements</h3>
+<div class="task-underline"></div>
+
+<div class="it-section">
+    <!-- Designation -->
+    <div class="row mb-3">
+        <div class="col-auto d-flex align-items-center mb-2">
+            <label class="form-label mb-0">Designation:</label>
+        </div>
+        <div class="col-md-4">
+            @if (string.IsNullOrWhiteSpace(EmployeeDetails.DesignationTitle))
+            {
+                <div class="text-danger">No designation available.</div>
+            }
+            else
+            {
+                <div class="fw-bold">@EmployeeDetails.DesignationTitle</div>
+            }
+        </div>
+    </div>
+
+    <!-- Infra -->
+    <h3 class="task-subtitle mb-3">Infra</h3>
+    @if (ITRequirements == null || !ITRequirements.Any())
+    {
+        <div class="fst-italic text-muted">No infra selected.</div>
+    }
+    else
+    {
+        <ul class="list-group mb-3">
+            @foreach (var option in ITRequirements.Where(x => x.Type == ConstantHelper.SPColumnValue.ITRequirements.ItemType.Infra))
+            {
+                <li class="list-group-item">@option.ItemTitle</li>
+            }
+        </ul>
+    }
+
+    <!-- Applications -->
+    <h3 class="task-subtitle mt-3 mb-3">Applications</h3>
+    @if (ITRequirements == null || !ITRequirements.Any())
+    {
+        <div class="fst-italic text-muted">No applications selected.</div>
+    }
+    else
+    {
+        <ul class="list-group mb-3">
+            @foreach (var option in ITRequirements.Where(x => x.Type == ConstantHelper.SPColumnValue.ITRequirements.ItemType.Applications))
+            {
+                <li class="list-group-item">@option.ItemTitle</li>
+            }
+        </ul>
+    }
+
+    <!-- Folder Permissions -->
+    <h3 class="task-subtitle mt-4">Folder Permissions</h3>
+    @if (FolderPermissions == null || !FolderPermissions.Any())
+    {
+        <div class="text-muted fst-italic">No folders added.</div>
+    }
+    else
+    {
+        <table class="table table-bordered">
+            <thead class="table-dark text-center">
+                <tr>
+                    <th>Folder Name / Path</th>
+                    <th>Read</th>
+                    <th>Write</th>
+                    <th>Delete</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var folder in FolderPermissions)
+                {
+                    <tr>
+                        <td>@folder.NameOrPath</td>
+                        <td class="text-center">
+                            <i class="bi @(folder.IsRead ? "bi-check-circle text-success" : "bi-x-circle text-danger")"></i>
+                        </td>
+                        <td class="text-center">
+                            <i class="bi @(folder.IsWrite ? "bi-check-circle text-success" : "bi-x-circle text-danger")"></i>
+                        </td>
+                        <td class="text-center">
+                            <i class="bi @(folder.IsDelete ? "bi-check-circle text-success" : "bi-x-circle text-danger")"></i>
+                        </td>
+                        <td class="text-center">@folder.Status</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public ViewFinalEmployeeDetailsItem EmployeeDetails { get; set; }
+    [Parameter, EditorRequired]
+    public List<ViewFinalITRequirementsItem> ITRequirements { get; set; }
+    [Parameter, EditorRequired]
+    public List<ViewFinalFolderPermission> FolderPermissions { get; set; }
+}

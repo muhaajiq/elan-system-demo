@@ -1,0 +1,354 @@
+﻿@inject NavigationManager Navigation
+@inject NavigationHelper NavigationHelper
+@inject TempMessageService MessageService
+@inject PeoplePickerHelper PeoplePickerHelper
+@inject LogHelper logHelper
+@inject IOptions<JSONAppSettings> appSettings
+
+<h3 class="task-title">Employee Details</h3>
+<div class="task-underline"></div>
+
+@if (RequestModel.HasError && !string.IsNullOrEmpty(RequestModel.ErrorMessage))
+{
+    <div class="alert alert-danger" role="alert">
+        @((MarkupString)RequestModel.ErrorMessage)
+    </div>
+
+    <div class="d-flex justify-content-end gap-2 mt-3 mb-3">
+        <button type="button" class="btn btn-outline-dark" @onclick="Close">Close</button>
+    </div>
+}
+else
+{
+    <div class="employee-section">
+        <EditForm Model="EmployeeDetailsVM">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <!-- Type -->
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label required-asterisk">Type</label>
+                </div>
+                <div class="col-md-4">
+                    <InputSelect class="form-select" @bind-Value="RequestModel.RequestType">
+                        <option value="">-- Select a request type --</option>
+                        @foreach (var item in RequestModel.RequestTypeList)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => RequestModel.RequestType)" />
+                </div>
+            </div>
+
+            <!-- Company -->
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label required-asterisk">Company</label>
+                </div>
+                <div class="col-md-4">
+                    <InputSelect class="form-select" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.CompanyID">
+                        <option value="">-- Select a company --</option>
+                        @foreach (var item in EmployeeDetailsVM.EmployeeDetailsVM.CompanyList)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => EmployeeDetailsVM.EmployeeDetailsVM.CompanyID)" />
+                </div>
+            </div>
+
+            <!-- Employee Name -->
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label required-asterisk">Name</label>
+                </div>
+                <div class="col-md-4">
+                    <InputText class="form-control" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.EmployeeName" />
+                    <ValidationMessage For="@(() => EmployeeDetailsVM.EmployeeDetailsVM.EmployeeName)" />
+                </div>
+            </div>
+
+            <!-- Employee ID -->
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label required-asterisk">Employee ID</label>
+                </div>
+                <div class="col-md-4">
+                    <InputText class="form-control" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.EmployeeID" />
+                    <ValidationMessage For="@(() => EmployeeDetailsVM.EmployeeDetailsVM.EmployeeID)" />
+                </div>
+            </div>
+
+            <!-- Designation -->
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label required-asterisk">Designation</label>
+                </div>
+                <div class="col-md-4">
+                    <InputSelect class="form-select"
+                                 Value="EmployeeDetailsVM.EmployeeDetailsVM.DesignationID"
+                                 ValueChanged="@(async (int? newValue) => await OnDesignationChangedAsync(newValue))"
+                                 ValueExpression="@(() => EmployeeDetailsVM.EmployeeDetailsVM.DesignationID)">
+                        <option value="">-- Select a designation --</option>
+                        @foreach (var item in EmployeeDetailsVM.EmployeeDetailsVM.DesignationList)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => EmployeeDetailsVM.EmployeeDetailsVM.DesignationID)" />
+                </div>
+            </div>
+
+            <!-- Grade -->
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label required-asterisk">Grade</label>
+                </div>
+                <div class="col-md-4">
+                    <InputSelect class="form-select" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.GradeID">
+                        <option value="">-- Select a grade --</option>
+                        @foreach (var item in EmployeeDetailsVM.EmployeeDetailsVM.GradeList)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => EmployeeDetailsVM.EmployeeDetailsVM.GradeID)" />
+                </div>
+            </div>
+
+            <!-- Department -->
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label required-asterisk">Department</label>
+                </div>
+                <div class="col-md-4">
+                    <InputSelect class="form-select" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.DepartmentID">
+                        <option value="">-- Select a department --</option>
+                        @foreach (var item in EmployeeDetailsVM.EmployeeDetailsVM.DepartmentList)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => EmployeeDetailsVM.EmployeeDetailsVM.DepartmentID)" />
+                </div>
+            </div>
+
+            <!-- Reporting Manager -->
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label required-asterisk">Reporting Manager</label>
+                </div>
+                <div class="col-md-4">
+                    <PeoplePickerComponent SpHostUrl="@spHostUrl"
+                                           AccessToken="@accessToken"
+                                           @bind-SelectedUser="@EmployeeDetailsVM.EmployeeDetailsVM.ReportingManager"
+                                           OnUserSelected="OnReportingManagerSelected" />
+                </div>
+            </div>
+
+            <!-- Location -->
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label required-asterisk">Location</label>
+                </div>
+                <div class="col-md-4">
+                    <InputSelect class="form-select" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.LocationID">
+                        <option value="">-- Select a location --</option>
+                        @foreach (var item in EmployeeDetailsVM.EmployeeDetailsVM.LocationList)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => EmployeeDetailsVM.EmployeeDetailsVM.LocationID)" />
+                </div>
+            </div>
+
+            <!-- Mobile No -->
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label required-asterisk">Mobile No.</label>
+                </div>
+                <div class="col-md-4">
+                    <InputText class="form-control" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.MobileNo" />
+                    <ValidationMessage For="@(() => EmployeeDetailsVM.EmployeeDetailsVM.MobileNo)" />
+                </div>
+            </div>
+
+            <!-- Contract/Temporary Staff -->
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label required-asterisk me-2">Contract/Temporary Staff</label>
+                </div>
+                <div class="col-md-4">
+                    <InputSelect class="form-select" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.ContractTemporaryStaff" @onchange="OnContractTypeChanged">
+                        <option value="">-- Select a staff type --</option>
+                        @foreach (var item in EmployeeDetailsVM.EmployeeDetailsVM.ContractTypeList)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => EmployeeDetailsVM.EmployeeDetailsVM.ContractTemporaryStaff)" />
+                </div>
+            </div>
+
+            <!-- Joined Date -->
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label required-asterisk">Joined Date</label>
+                </div>
+                <div class="col-md-4">
+                    <RadzenDatePicker class="form-control" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.JoinedDate" DateFormat="@ConstantHelper.DateFormat.DefaultDateFormat" />
+                    <ValidationMessage For="@(() => EmployeeDetailsVM.EmployeeDetailsVM.JoinedDate)" />
+                </div>
+
+                <!-- End Date -->
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label">End Date</label>
+                </div>
+                <div class="col-md-4">
+                    <input type="date"
+                           class="form-control"
+                           @bind="EmployeeDetailsVM.EmployeeDetailsVM.EndDate"
+                           disabled="@(!IsEndDateEnabled)"
+                           min="@GetJoinedDateForMin()" placeholder="-" />
+                    <ValidationMessage For="@(() => EmployeeDetailsVM.EmployeeDetailsVM.EndDate)" />
+                </div>
+            </div>
+
+            <!-- Descriptions -->
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label">Description 1</label>
+                </div>
+                <div class="col-md-4">
+                    <InputText class="form-control" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.Description1" />
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label">Description 2</label>
+                </div>
+                <div class="col-md-4">
+                    <InputText class="form-control" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.Description2" />
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label">Description 3</label>
+                </div>
+                <div class="col-md-4">
+                    <InputText class="form-control" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.Description3" />
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label">Description 4</label>
+                </div>
+                <div class="col-md-4">
+                    <InputText class="form-control" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.Description4" />
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label">Description 5</label>
+                </div>
+                <div class="col-md-4">
+                    <InputText class="form-control" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.Description5" />
+                </div>
+            </div>
+
+            <hr />
+
+            <!-- Remarks -->
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label">Remarks</label>
+                </div>
+                <div class="col-md-10">
+                    <InputTextArea class="form-control" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.Remarks" rows="3" />
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="d-flex justify-content-end gap-2 mt-3 mb-3">
+                <button type="button" class="btn btn-primary" @onclick="OnSave">Save</button>
+                <button type="button" class="btn btn-success" @onclick="OnSubmit">Resubmit</button>
+                <button type="button" class="btn btn-outline-dark" @onclick="Close">Close</button>
+            </div>
+        </EditForm>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public ViewModelRequest RequestModel { get; set; }
+    [Parameter, EditorRequired]
+    public ViewModelEmployeeDetails EmployeeDetailsVM { get; set; }
+    [Parameter, EditorRequired]
+    public string spHostUrl { get; set; }
+    [Parameter, EditorRequired]
+    public string accessToken { get; set; }
+
+    [Parameter] public ViewModelITRequirements ITRequirementsVM { get; set; }
+    [Parameter] public ViewModelHardware HardwareVM { get; set; }
+    [Parameter] public EventCallback<ViewModelRequest> RequestModelChanged { get; set; }
+    [Parameter] public EventCallback OnSave { get; set; }
+    [Parameter] public EventCallback OnSubmit { get; set; }
+    [Parameter] public EventCallback<ViewModelEmployeeDetails> OnEmployeeDetailsChanged { get; set; }
+
+    private bool showErrorAlert = false;
+    private CancellationTokenSource _errorAlertCts;
+
+    private bool IsEndDateEnabled =>
+        !string.IsNullOrEmpty(EmployeeDetailsVM.EmployeeDetailsVM.ContractTemporaryStaff) &&
+        EmployeeDetailsVM.EmployeeDetailsVM.ContractTemporaryStaff != ConstantHelper.RequestForm.ContractType.Permanent;
+
+    private async Task OnDesignationChangedAsync(int? newValue)
+    {
+        EmployeeDetailsVM.EmployeeDetailsVM.DesignationID = newValue;
+        EmployeeDetailsVM.EmployeeDetailsVM.DesignationTitle = EmployeeDetailsVM.EmployeeDetailsVM.DesignationList
+            .FirstOrDefault(d => int.TryParse(d.Value, out var id) && id == newValue)
+            ?.Text ?? "";
+
+        if (OnEmployeeDetailsChanged.HasDelegate)
+            await OnEmployeeDetailsChanged.InvokeAsync(EmployeeDetailsVM);
+    }
+
+    private void OnContractTypeChanged(ChangeEventArgs e)
+    {
+        EmployeeDetailsVM.EmployeeDetailsVM.ContractTemporaryStaff = e.Value?.ToString() ?? string.Empty;
+    }
+
+    private void OnReportingManagerSelected(PeoplePickerUser user)
+    {
+        if (user != null)
+        {
+            EmployeeDetailsVM.EmployeeDetailsVM.ReportingManagerName = user.Name;
+            EmployeeDetailsVM.EmployeeDetailsVM.ReportingManagerEmail = user.Email;
+            EmployeeDetailsVM.EmployeeDetailsVM.ReportingManagerLogin = user.Login;
+        }
+        else
+        {
+            EmployeeDetailsVM.EmployeeDetailsVM.ReportingManagerName = null;
+            EmployeeDetailsVM.EmployeeDetailsVM.ReportingManagerEmail = null;
+            EmployeeDetailsVM.EmployeeDetailsVM.ReportingManagerLogin = null;
+        }
+
+        StateHasChanged();
+    }
+
+    private void Close()
+    {
+        Navigation.NavigateTo(NavigationHelper.BuildUrl("/Home"));
+    }
+
+    private string GetJoinedDateForMin() =>
+        EmployeeDetailsVM.EmployeeDetailsVM.JoinedDate?.ToString(appSettings.Value.DefaultDateFormat) ?? "";
+}
+

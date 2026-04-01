@@ -1,0 +1,61 @@
+﻿@inject NavigationHelper NavigationHelper
+
+<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+
+<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+    <nav class="flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="@NavigationHelper.BuildUrl("/Home")" Match="NavLinkMatch.All">
+                <span class="bi bi-house-door-fill" aria-hidden="true"></span> Home
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="@NavigationHelper.BuildUrl("/CreateRequestForm/EmployeeDetails")">
+                <span class="bi bi-plus-square-fill" aria-hidden="true"></span> New Request
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="@NavigationHelper.BuildUrl("/RequestListing")">
+                <span class="bi bi-list-nested" aria-hidden="true"></span> Request Listing
+            </NavLink>
+        </div>
+        
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="@NavigationHelper.BuildUrl("/EmployeeListing")">
+                <span class="bi bi-person-lines-fill" aria-hidden="true"></span> Employee Listing
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="@NavigationHelper.BuildUrl("/Delegation")">
+                <span class="bi bi-person-fill-add" aria-hidden="true"></span> Delegation
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="@NavigationHelper.BuildUrl("/Reports")">
+                <span class="bi bi-clipboard2-data" aria-hidden="true"></span> Reports
+            </NavLink>
+        </div>
+
+@*         <div class="nav-item px-3">
+            <NavLink class="nav-link" href="eprocurement">
+                <span class="bi bi-columns-gap" aria-hidden="true"></span> e-Procurement
+            </NavLink>
+        </div>
+ *@
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="@NavigationHelper.BuildUrl("/Administration")">
+                <span class="bi bi-globe" aria-hidden="true"></span> Administration
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="user_manuals">
+                <span class="bi bi-book-half" aria-hidden="true"></span> User Manuals
+            </NavLink>
+        </div>
+    </nav>
+</div>

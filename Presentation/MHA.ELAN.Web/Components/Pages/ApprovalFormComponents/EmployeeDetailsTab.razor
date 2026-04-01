@@ -1,0 +1,259 @@
+﻿@inject NavigationManager Navigation
+@inject NavigationHelper NavigationHelper
+
+<h3 class="task-title">Employee Details</h3>
+<div class="task-underline"></div>
+
+<div class="employee-section">
+    <EditForm Model="EmployeeDetailsVM">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <!-- Type -->
+        <div class="row mb-3">
+            <div class="col-md-2 d-flex align-items-center">
+                <label class="form-label required-asterisk">Type</label>
+            </div>
+            <div class="col-md-4">
+                <InputText class="form-control" @bind-Value="EmployeeDetailsVM.RequestType" readonly />
+            </div>
+        </div>
+
+        <!-- Company -->
+        <div class="row mb-3">
+            <div class="col-md-2 d-flex align-items-center">
+                <label class="form-label required-asterisk">Company</label>
+            </div>
+            <div class="col-md-4">
+                <InputText class="form-control" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.CompanyTitle" readonly />
+            </div>
+        </div>
+
+        <!-- Employee Name -->
+        <div class="row mb-3">
+            <div class="col-md-2 d-flex align-items-center">
+                <label class="form-label required-asterisk">Name</label>
+            </div>
+            <div class="col-md-4">
+                <InputText class="form-control" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.EmployeeName" readonly />
+            </div>
+        </div>
+
+        <!-- Employee ID -->
+        <div class="row mb-3">
+            <div class="col-md-2 d-flex align-items-center">
+                <label class="form-label required-asterisk">Employee ID</label>
+            </div>
+            <div class="col-md-4">
+                <InputText class="form-control" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.EmployeeID" readonly />
+            </div>
+        </div>
+
+        <!-- Designation -->
+        <div class="row mb-3">
+            <div class="col-md-2 d-flex align-items-center">
+                <label class="form-label required-asterisk">Designation</label>
+            </div>
+            <div class="col-md-4">
+                <InputText class="form-control" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.DesignationTitle" readonly />
+            </div>
+        </div>
+
+        <!-- Grade -->
+        <div class="row mb-3">
+            <div class="col-md-2 d-flex align-items-center">
+                <label class="form-label required-asterisk">Grade</label>
+            </div>
+            <div class="col-md-4">
+                <InputText class="form-control" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.GradeTitle" readonly />
+            </div>
+        </div>
+
+        <!-- Department -->
+        <div class="row mb-3">
+            <div class="col-md-2 d-flex align-items-center">
+                <label class="form-label required-asterisk">Department</label>
+            </div>
+            <div class="col-md-4">
+                <InputText class="form-control" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.DepartmentTitle" readonly />
+            </div>
+        </div>
+
+        <!-- Reporting Manager -->
+        <div class="row mb-3">
+            <div class="col-md-2 d-flex align-items-center">
+                <label class="form-label required-asterisk">Reporting Manager</label>
+            </div>
+            <div class="col-md-4">
+                <InputText class="form-control" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.ReportingManagerName" readonly />
+            </div>
+        </div>
+
+        <!-- Location -->
+        <div class="row mb-3">
+            <div class="col-md-2 d-flex align-items-center">
+                <label class="form-label required-asterisk">Location</label>
+            </div>
+            <div class="col-md-4">
+                <InputText class="form-control" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.LocationTitle" readonly />
+            </div>
+        </div>
+
+        <!-- Mobile No -->
+        <div class="row mb-3">
+            <div class="col-md-2 d-flex align-items-center">
+                <label class="form-label required-asterisk">Mobile No.</label>
+            </div>
+            <div class="col-md-4">
+                <InputText class="form-control" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.MobileNo" readonly />
+            </div>
+        </div>
+
+        <!-- Contract/Temporary Staff -->
+        <div class="row mb-3">
+            <div class="col-md-2 d-flex align-items-center">
+                <label class="form-label required-asterisk me-2">Contract/Temporary Staff</label>
+            </div>
+            <div class="col-md-4">
+                <InputText class="form-control" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.ContractTemporaryStaff" readonly />
+            </div>
+        </div>
+
+        <!-- Joined Date -->
+        <div class="row mb-3">
+            <div class="col-md-2 d-flex align-items-center">
+                <label class="form-label required-asterisk">Joined Date</label>
+            </div>
+            <div class="col-md-4">
+                <RadzenDatePicker @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.JoinedDate" DateFormat="@ConstantHelper.DateFormat.DefaultDateFormat" ReadOnly />
+            </div>
+
+            <!-- End Date -->
+            <div class="col-md-2 d-flex align-items-center">
+                <label class="form-label">End Date</label>
+            </div>
+            <div class="col-md-4">
+                <RadzenDatePicker @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.EndDate" DateFormat="@ConstantHelper.DateFormat.DefaultDateFormat" ReadOnly />
+            </div>
+        </div>
+
+        <!-- Descriptions -->
+        <div class="row mb-3">
+            <div class="col-md-2 d-flex align-items-center">
+                <label class="form-label">Description 1</label>
+            </div>
+            <div class="col-md-4">
+                <InputText class="form-control" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.Description1" readonly />
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-2 d-flex align-items-center">
+                <label class="form-label">Description 2</label>
+            </div>
+            <div class="col-md-4">
+                <InputText class="form-control" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.Description2" readonly />
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-2 d-flex align-items-center">
+                <label class="form-label">Description 3</label>
+            </div>
+            <div class="col-md-4">
+                <InputText class="form-control" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.Description3" readonly />
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-2 d-flex align-items-center">
+                <label class="form-label">Description 4</label>
+            </div>
+            <div class="col-md-4">
+                <InputText class="form-control" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.Description4" readonly />
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-2 d-flex align-items-center">
+                <label class="form-label">Description 5</label>
+            </div>
+            <div class="col-md-4">
+                <InputText class="form-control" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.Description5" readonly />
+            </div>
+        </div>
+
+        <hr />
+
+        <!-- Remarks -->
+        <div class="row mb-3">
+            <div class="col-md-2 d-flex align-items-center">
+                <label class="form-label">Remarks</label>
+            </div>
+            <div class="col-md-10">
+                <InputTextArea class="form-control"
+                               @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.Remarks"
+                               rows="3"
+                               @onchange="e => RemarksChanged(e.Value?.ToString())" />
+            </div>
+        </div>
+
+    </EditForm>
+
+    <div class="d-flex justify-content-end gap-2 mb-3 px-3">
+        @if (VisibilitySettings.ShowRequireAmendment)
+        {
+            <button type="button" class="btn btn-primary" @onclick="OnRequireAmendment">Require Amendment</button>
+        }
+        @if (VisibilitySettings.ShowApprove)
+        {
+            <button type="button" class="btn btn-success" @onclick="OnApprove">Approve</button>
+            @* <button type="button" class="btn btn-success" @onclick="ApproveClicked">Approve</button> *@
+
+        }
+        @if (VisibilitySettings.ShowReject)
+        {
+            <button type="button" class="btn btn-danger" @onclick="OnReject">Reject</button>
+        }
+        @if (VisibilitySettings.ShowSave)
+        {
+            <button type="button" class="btn btn-primary" @onclick="OnSave">Save</button>
+        }
+        @if (VisibilitySettings.ShowComplete)
+        {
+            <button type="button" class="btn btn-success" @onclick="OnComplete">Complete</button>
+        }
+        @if (VisibilitySettings.ShowClose)
+        {
+            <button type="button" class="btn btn-outline-dark" onclick="@Close">Close</button>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public RequestFormVisibilitySettings VisibilitySettings { get; set; }
+    [Parameter, EditorRequired]
+    public ViewRequestItem Request { get; set; }
+    [Parameter, EditorRequired]
+    public ViewModelEmployeeDetails EmployeeDetailsVM { get; set; }
+    [Parameter] public EventCallback<string> OnRemarksChanged { get; set; }
+    [Parameter] public EventCallback OnRequireAmendment { get; set; }
+    [Parameter] public EventCallback OnApprove { get; set; }
+    [Parameter] public EventCallback OnReject { get; set; }
+    [Parameter] public EventCallback OnSave { get; set; }
+    [Parameter] public EventCallback OnComplete { get; set; }
+
+    public string Remark { get; set; } = string.Empty;
+
+    private void Close()
+    {
+        NavigationHelper.NavigateTo(NavigationHelper.BuildUrl("/Home"));
+    }
+
+    private async Task RemarksChanged(string newRemarks)
+    {
+        if (OnRemarksChanged.HasDelegate)
+            await OnRemarksChanged.InvokeAsync(newRemarks);
+    }
+}

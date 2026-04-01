@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ElmahCore" Version="2.1.2" />
+    <PackageReference Include="itext" Version="9.2.0" />
+    <PackageReference Include="itext.bouncy-castle-adapter" Version="9.2.0" />
+    <PackageReference Include="itext.bouncy-castle-fips-adapter" Version="9.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="8.0.17" />
+    <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.3.0" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.7" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.7" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="9.0.7" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.7" />
+    <PackageReference Include="Microsoft.Identity.Web" Version="3.9.4" />
+    <PackageReference Include="Microsoft.SharePointOnline.CSOM" Version="16.1.26211.12010" />
+    <PackageReference Include="PnP.Core" Version="1.15.0" />
+    <PackageReference Include="PnP.Core.Auth" Version="1.15.0" />
+    <PackageReference Include="PnP.Framework" Version="1.18.0" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MHA.ELAN.Entities\MHA.ELAN.Entities.csproj" />
+  </ItemGroup>
+
+</Project>

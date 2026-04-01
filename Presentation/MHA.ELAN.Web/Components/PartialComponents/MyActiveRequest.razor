@@ -1,0 +1,95 @@
+﻿@page "/myactiverequest"
+@inject TokenHelper TokenHelper
+@inject HomeBL homeBL
+@inject LogHelper LogHelper
+@inject NavigationHelper NavigationHelper
+@inject IOptions<JSONAppSettings> appSettings
+
+<div class="pending-task-section">
+    <h3 class="pending-task-title px-4">My Active Requests</h3>
+    <div class="pending-task-underline"></div>
+
+    <div class="flex-grow-1 px-4 p-3 overflow-auto">
+
+        <RadzenDataGrid @ref="grid"
+                        TItem="MyActiveRequestData"
+                        LoadData="@LoadRequest"
+                        AllowPaging="true"
+                        PageSize="pageSelectionLimit"
+                        AllowSorting="false"
+                        AllowAlternatingRows="false"
+                        AllowFiltering="false"
+                        PagerHorizontalAlign="HorizontalAlign.Left"
+                        ShowPagingSummary="true" class="radzen-datagrid"
+                        GridLines="DataGridGridLines.Horizontal"
+                        EmptyText="No data available"
+                        ColumnWidth="@ConstantHelper.TableColumnWidth.General">
+            <Columns>
+                <RadzenDataGridColumn TItem="MyActiveRequestData" Property="ReferenceNo" Title="Request Reference No" Frozen="true" WhiteSpace="WhiteSpace.Wrap">
+                    <Template Context="data">
+                        @if (!string.IsNullOrWhiteSpace(data.ReferenceNo))
+                        {
+                            <a href="@NavigationHelper.BuildUrl($"/ViewRequestForm/EmployeeDetails", (ConstantHelper.ParameterQuery.RequestId, data.RequestID.ToString()))">@data.ReferenceNo</a>
+                        }
+                        else
+                        {
+                            <a href="@NavigationHelper.BuildUrl($"/ViewRequestForm/EmployeeDetails", (ConstantHelper.ParameterQuery.RequestId, data.RequestID.ToString()))">-</a>
+                        }
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="MyActiveRequestData" Property="EmployeeID" Title="Employee ID" WhiteSpace="WhiteSpace.Wrap" />
+                <RadzenDataGridColumn TItem="MyActiveRequestData" Property="EmployeeName" Title="Employee Name" WhiteSpace="WhiteSpace.Wrap" />
+                <RadzenDataGridColumn TItem="MyActiveRequestData" Property="RequestType" Title="Request Type" WhiteSpace="WhiteSpace.Wrap" />
+                <RadzenDataGridColumn TItem="MyActiveRequestData" Property="WorkflowStatus" Title="Workflow Status" WhiteSpace="WhiteSpace.Wrap" />
+
+                <RadzenDataGridColumn TItem="MyActiveRequestData" Property="Submitted" Title="Submission Date" WhiteSpace="WhiteSpace.Wrap">
+                    <Template Context="data">
+                        @data.Submitted?.ToString(appSettings.Value.DefaultDateFormat)
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = ConstantHelper.ParameterQuery.SPHostUrl)]
+    [Parameter]
+    public string spHostUrl { get; set; }
+    public string accessToken = string.Empty;
+
+    private RadzenDataGrid<MyActiveRequestData> grid;
+    ViewModelMyActiveRequest vm = new();
+    private int pageSelectionLimit;
+
+    protected override async Task OnInitializedAsync()
+    {
+        accessToken = await TokenHelper.GetUserAccessToken();
+        pageSelectionLimit = int.Parse(JSONAppSettings.HomePagingShowLimit);
+    }
+
+    public async Task LoadRequest(LoadDataArgs args)
+    {
+        try
+        {
+            int pageSize = args.Top ?? pageSelectionLimit;
+            int skip = args.Skip ?? 0;
+            var currentPage = (skip / pageSize) + 1;
+
+            var vmMyActiveRequest = new ViewModelMyActiveRequest
+            {
+                PageNumber = currentPage,
+                RowsPerPage = pageSelectionLimit
+            };
+
+            vm = await homeBL.GetMyActiveRequest(vmMyActiveRequest, spHostUrl, accessToken);
+            grid.Data = vm.Request;
+            grid.Count = vm.Count;
+        }
+        catch (Exception ex)
+        {
+            LogHelper.LogMessage("HomeBL - GetMyActiveRequest Error:" + ex.ToString());
+        }
+    }
+}

@@ -1,0 +1,204 @@
+﻿<h3 class="task-title">Employee Details</h3>
+<div class="task-underline"></div>
+
+<div class="employee-section">
+    <!-- Type -->
+    @*     <div class="row mb-3">
+        <div class="col-md-2 d-flex align-items-center">
+            <label class="form-label required-asterisk">Type</label>
+        </div>
+        <div class="col-md-4">
+            <InputText @bind-Value="Request.RequestType" class="form-control" readonly />
+        </div>
+    </div> *@
+
+    <!-- Company -->
+    <div class="row mb-3">
+        <div class="col-md-2 d-flex align-items-center">
+            <label class="form-label required-asterisk">Company</label>
+        </div>
+        <div class="col-md-4">
+            <InputText @bind-Value="EmployeeDetails.CompanyTitle" class="form-control" readonly />
+        </div>
+    </div>
+
+    <!-- Name -->
+    <div class="row mb-3">
+        <div class="col-md-2 d-flex align-items-center">
+            <label class="form-label required-asterisk">Name</label>
+        </div>
+        <div class="col-md-4">
+            <InputText @bind-Value="EmployeeDetails.EmployeeName" class="form-control" readonly />
+        </div>
+    </div>
+
+    <!-- Employee ID -->
+    <div class="row mb-3">
+        <div class="col-md-2 d-flex align-items-center">
+            <label class="form-label required-asterisk">Employee ID</label>
+        </div>
+        <div class="col-md-4">
+            <InputText @bind-Value="EmployeeDetails.EmployeeID" class="form-control" readonly />
+        </div>
+    </div>
+
+    <!-- Designation -->
+    <div class="row mb-3">
+        <div class="col-md-2 d-flex align-items-center">
+            <label class="form-label required-asterisk">Designation</label>
+        </div>
+        <div class="col-md-4">
+            <InputText @bind-Value="EmployeeDetails.DesignationTitle" class="form-control" readonly />
+        </div>
+    </div>
+
+    <!-- Grade -->
+    <div class="row mb-3">
+        <div class="col-md-2 d-flex align-items-center">
+            <label class="form-label required-asterisk">Grade</label>
+        </div>
+        <div class="col-md-4">
+            <InputText @bind-Value="EmployeeDetails.GradeTitle" class="form-control" readonly />
+        </div>
+    </div>
+
+    <!-- Department -->
+    <div class="row mb-3">
+        <div class="col-md-2 d-flex align-items-center">
+            <label class="form-label required-asterisk">Department</label>
+        </div>
+        <div class="col-md-4">
+            <InputText @bind-Value="EmployeeDetails.DepartmentTitle" class="form-control" readonly />
+        </div>
+    </div>
+
+    <!-- Reporting Manager -->
+    <div class="row mb-3">
+        <div class="col-md-2 d-flex align-items-center">
+            <label class="form-label">Reporting Manager</label>
+        </div>
+        <div class="col-md-4">
+            <InputText @bind-Value="EmployeeDetails.ReportingManagerName" class="form-control" readonly />
+        </div>
+    </div>
+
+    <!-- Location -->
+    <div class="row mb-3">
+        <div class="col-md-2 d-flex align-items-center">
+            <label class="form-label required-asterisk">Location</label>
+        </div>
+        <div class="col-md-4">
+            <InputText @bind-Value="EmployeeDetails.LocationTitle" class="form-control" readonly />
+        </div>
+    </div>
+
+    <!-- Mobile No -->
+    <div class="row mb-3">
+        <div class="col-md-2 d-flex align-items-center">
+            <label class="form-label required-asterisk">Mobile No.</label>
+        </div>
+        <div class="col-md-4">
+            <InputText @bind-Value="EmployeeDetails.MobileNo" class="form-control" readonly />
+        </div>
+    </div>
+
+    <!-- Contract/Temporary Staff -->
+    <div class="row mb-3">
+        <div class="col-md-2 d-flex align-items-center">
+            <label class="form-label required-asterisk me-2">Contract/Temporary Staff</label>
+        </div>
+        <div class="col-md-4">
+            <InputText @bind-Value="EmployeeDetails.ContractOrTemporaryStaff" class="form-control" readonly />
+        </div>
+    </div>
+
+    <!-- Joined Date and End Date -->
+    <div class="row mb-3">
+        <div class="col-md-2 d-flex align-items-center">
+            <label class="form-label required-asterisk">Joined Date</label>
+        </div>
+        <div class="col-md-4">
+            @if (EmployeeDetails.JoinDate != null && EmployeeDetails.JoinDate != DateTime.MinValue)
+            {
+                <RadzenDatePicker @bind-Value="EmployeeDetails.JoinDate" ReadOnly DateFormat="@ConstantHelper.DateFormat.DefaultDateFormat" />
+            }
+            else
+            {
+                <input type="text" class="form-control" readonly />
+            }
+        </div>
+        <div class="col-md-2 d-flex align-items-center">
+            <label class="form-label">End Date</label>
+        </div>
+        <div class="col-md-4">
+            @if (EmployeeDetails.EndDate != null && EmployeeDetails.EndDate != DateTime.MinValue)
+            {
+                <RadzenDatePicker @bind-Value="EmployeeDetails.EndDate" ReadOnly DateFormat="@ConstantHelper.DateFormat.DefaultDateFormat" />
+            }
+            else
+            {
+                <input type="text" class="form-control" readonly />
+            }
+        </div>
+    </div>
+
+    <!-- Descriptions -->
+    <div class="row mb-3">
+        <div class="col-md-2 d-flex align-items-center">
+            <label class="form-label">Description 1</label>
+        </div>
+        <div class="col-md-4">
+            <InputText @bind-Value="EmployeeDetails.Description1" class="form-control" readonly />
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-2 d-flex align-items-center">
+            <label class="form-label">Description 2</label>
+        </div>
+        <div class="col-md-4">
+            <InputText @bind-Value="EmployeeDetails.Description2" class="form-control" readonly />
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-2 d-flex align-items-center">
+            <label class="form-label">Description 3</label>
+        </div>
+        <div class="col-md-4">
+            <InputText @bind-Value="EmployeeDetails.Description3" class="form-control" readonly />
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-2 d-flex align-items-center">
+            <label class="form-label">Description 4</label>
+        </div>
+        <div class="col-md-4">
+            <InputText @bind-Value="EmployeeDetails.Description4" class="form-control" readonly />
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-2 d-flex align-items-center">
+            <label class="form-label">Description 5</label>
+        </div>
+        <div class="col-md-4">
+            <InputText @bind-Value="EmployeeDetails.Description5" class="form-control" readonly />
+        </div>
+    </div>
+
+    <hr />
+
+    <!-- Remarks -->
+    @*     <div class="row mb-3">
+        <div class="col-md-2 d-flex align-items-center">
+            <label class="form-label">Remarks</label>
+        </div>
+        <div class="col-md-10">
+             <InputText @bind-Value="ViewRequestFormModel.Remarks" class="form-control" readonly /> 
+        </div>*@
+</div>
+
+@code {
+    // [Parameter, EditorRequired]
+    // public ViewRequestItem Request { get; set; }
+    [Parameter, EditorRequired]
+    public ViewFinalEmployeeDetailsItem EmployeeDetails { get; set; }
+}

@@ -1,0 +1,171 @@
+﻿@page "/ApprovalForm"
+@page "/ApprovalForm/{CurrentSection}"
+
+<PageTitle>Approval Form</PageTitle>
+
+<PageHeader Title=@($"{(model.ViewRequestItem.WorkflowStatus == ConstantHelper.WorkflowStatus.PENDING_ACKNOWLEDGEMENT ? "Acknowledgement Form" : "Approval Form")} ({requestType ?? ""})")
+            ReferenceNo="@model.ViewRequestItem.ReferenceNo"
+            WorkflowStatus="@model.ViewRequestItem.WorkflowStatus" />
+
+<div>
+    <div class="flex-fill py-4 px-5">
+        @if (model.IsLoaded && !string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger" role="alert">@((MarkupString)errorMessage)</div>
+            <div class="d-flex justify-content-end gap-2 mb-3 px-3">
+                <button type="button" class="btn btn-outline-dark" @onclick="Close">Close</button>
+            </div>
+        }
+
+        <br />
+
+        @if (model.IsLoaded && !model.IsMyTask)
+        {
+            <div class="alert alert-danger m-3" role="alert">
+                <strong>Error:</strong> @model.ErrorMessage
+            </div>
+            <div class="d-flex justify-content-end gap-2 mb-3 px-3">
+                <button type="button" class="btn btn-outline-dark" @onclick="Close">Close</button>
+            </div>
+        }
+        else if (model.IsLoaded)
+        {
+            @* Resubmission *@
+            if (WorkflowStateService.WorkflowStatus == ConstantHelper.WorkflowStatus.PENDING_ORIGINATOR_RESUBMISSION)
+            {
+                <EditForm Model="RequestModel">
+                    @if (showErrorAlert && RequestModel.EmployeeDetails.HasError && !string.IsNullOrEmpty(RequestModel.EmployeeDetails.ErrorMessage))
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            @((MarkupString)RequestModel.EmployeeDetails.ErrorMessage)
+                            <button type="button" class="btn-close" aria-label="Close" @onclick="DismissErrorAlert"></button>
+                        </div>
+                    }
+                    <div style="display: @(CurrentSection == "EmployeeDetails" ? "block" : "none")">
+                        <MHA.ELAN.Web.Components.Pages.ApprovalFormComponents.ResubmitEmployeeDetailsTab RequestModel="@RequestModel"
+                                                                                                                 EmployeeDetailsVM="@RequestModel.EmployeeDetails"
+                                                                                                                 OnEmployeeDetailsChanged="OnEmployeeDetailsChanged"
+                                                                                                                 spHostUrl="@spHostUrl" accessToken="@accessToken"
+                                                                                                                 OnSave="HandleReSave" OnSubmit="HandleReSubmit" />
+                    </div>
+
+                    <div style="display: @(CurrentSection == "ITRequirements" ? "block" : "none")">
+                        <MHA.ELAN.Web.Components.Pages.ApprovalFormComponents.ResubmitITRequirementsTab ITRequirementsVM="@RequestModel.ITRequirementsVM"
+                                                                                                                DesignationFromEmployeeDetails="@RequestModel.EmployeeDetails.EmployeeDetailsVM.DesignationTitle"
+                                                                                                                DesignationIDFromEmployeeDetails="@RequestModel.EmployeeDetails.EmployeeDetailsVM.DesignationID" />
+                    </div>
+
+                    <div style="display: @(CurrentSection == "Hardware" ? "block" : "none")">
+                        <MHA.ELAN.Web.Components.Pages.ApprovalFormComponents.ResubmitHardwareTab HardwareVM="@RequestModel.HardwareVM"
+                                                                                                          DesignationFromEmployeeDetails="@RequestModel.EmployeeDetails.EmployeeDetailsVM.DesignationTitle"
+                                                                                                          DesignationIDFromEmployeeDetails="@RequestModel.EmployeeDetails.EmployeeDetailsVM.DesignationID" />
+                    </div>
+                </EditForm>
+            }
+            else
+            {
+                @if (IsModificationRequest)
+                {
+                    <div style="display: @(CurrentSection == "EmployeeDetails" ? "block" : "none")">
+                        <MHA.ELAN.Web.Components.Pages.ApprovalFormComponents.Modification.EmployeeDetailsModificationTab Request="@model.ViewRequestItem"
+                                                                                                                                  EmployeeDetailsVM="@model.EmployeeDetails"
+                                                                                                                                  VisibilitySettings="@visibilitySettings"
+                                                                                                                                  OnRequireAmendment="HandleRequireAmendment"
+                                                                                                                                  OnApprove="HandleApprove"
+                                                                                                                                  OnReject="HandleReject"
+                                                                                                                                  OnSave="HandleSave"
+                                                                                                                                  OnComplete="HandleComplete" />
+                    </div>
+                    <div style="display: @(CurrentSection == "ITRequirements" ? "block" : "none")">
+                        <MHA.ELAN.Web.Components.Pages.ApprovalFormComponents.Modification.ITRequirementsModificationTab Request="@model.ViewRequestItem"
+                                                                                                                                 EmployeeDetails="@model.EmployeeDetails"
+                                                                                                                                 ITRequirements="@model.ITRequirements"
+                                                                                                                                 FolderPermissions="@model.FolderPermissions"
+                                                                                                                                 VisibilitySettings="@visibilitySettings"
+                                                                                                                                 spHostUrl="@spHostUrl"
+                                                                                                                                 accessToken="@accessToken" />
+                    </div>
+                    <div style="display: @(CurrentSection == "Hardware" ? "block" : "none")">
+                        <MHA.ELAN.Web.Components.Pages.ApprovalFormComponents.Modification.HardwareModificationTab EmployeeDetails="@model.EmployeeDetails"
+                                                                                                                           Hardwares="@model.HardwareItems"
+                                                                                                                           VisibilitySettings="@visibilitySettings"
+                                                                                                                           Request="@model.ViewRequestItem"
+                                                                                                                           IsITDepartment="@IsITDepartment" />
+                    </div>
+                }
+                else if (IsTerminationRequest)
+                {
+                    <div style="display: @(CurrentSection == "EmployeeDetails" ? "block" : "none")">
+                        <MHA.ELAN.Web.Components.Pages.ApprovalFormComponents.Termination.EmployeeDetailsTerminationTab Request="@model.ViewRequestItem"
+                                                                                                                                EmployeeDetailsVM="@model.EmployeeDetails"
+                                                                                                                                VisibilitySettings="@visibilitySettings"
+                                                                                                                                OnRequireAmendment="HandleRequireAmendment"
+                                                                                                                                OnApprove="HandleApprove"
+                                                                                                                                OnReject="HandleReject"
+                                                                                                                                OnSave="HandleSave"
+                                                                                                                                OnComplete="HandleComplete" />
+                    </div>
+                    <div style="display: @(CurrentSection == "ITRequirements" ? "block" : "none")">
+                        <MHA.ELAN.Web.Components.Pages.ApprovalFormComponents.Termination.ITRequirementsTerminationTab Request="@model.ViewRequestItem"
+                                                                                                                               EmployeeDetails="@model.EmployeeDetails"
+                                                                                                                               ITRequirements="@model.ITRequirements"
+                                                                                                                               FolderPermissions="@model.FolderPermissions"
+                                                                                                                               VisibilitySettings="@visibilitySettings"
+                                                                                                                               spHostUrl="@spHostUrl"
+                                                                                                                               accessToken="@accessToken" />
+                    </div>
+                    <div style="display: @(CurrentSection == "Hardware" ? "block" : "none")">
+                        <MHA.ELAN.Web.Components.Pages.ApprovalFormComponents.Termination.HardwareTerminationTab EmployeeDetails="@model.EmployeeDetails"
+                                                                                                                         Hardwares="@model.HardwareItems"
+                                                                                                                         VisibilitySettings="@visibilitySettings"
+                                                                                                                         Request="@model.ViewRequestItem"
+                                                                                                                         IsITDepartment="@IsITDepartment" />
+                    </div>
+                }
+                else
+                {
+                    <div style="display: @(CurrentSection == "EmployeeDetails" ? "block" : "none")">
+                        <MHA.ELAN.Web.Components.Pages.ApprovalFormComponents.EmployeeDetailsTab Request="@model.ViewRequestItem"
+                                                                                                         EmployeeDetailsVM="@model.EmployeeDetails"
+                                                                                                         VisibilitySettings="@visibilitySettings"
+                                                                                                         OnRequireAmendment="HandleRequireAmendment"
+                                                                                                         OnApprove="HandleApprove"
+                                                                                                         OnReject="HandleReject"
+                                                                                                         OnSave="HandleSave"
+                                                                                                         OnComplete="HandleComplete" />
+                    </div>
+                    <div style="display: @(CurrentSection == "ITRequirements" ? "block" : "none")">
+                        <MHA.ELAN.Web.Components.Pages.ApprovalFormComponents.ITRequirementsTab Request="@model.ViewRequestItem"
+                                                                                                        EmployeeDetails="@model.EmployeeDetails"
+                                                                                                        ITRequirements="@model.ITRequirements"
+                                                                                                        FolderPermissions="@model.FolderPermissions"
+                                                                                                        VisibilitySettings="@visibilitySettings"
+                                                                                                        spHostUrl="@spHostUrl"
+                                                                                                        accessToken="@accessToken" />
+                    </div>
+                    <div style="display: @(CurrentSection == "Hardware" ? "block" : "none")">
+                        <MHA.ELAN.Web.Components.Pages.ApprovalFormComponents.HardwareTab EmployeeDetails="@model.EmployeeDetails"
+                                                                                                  Hardwares="@model.HardwareItems"
+                                                                                                  VisibilitySettings="@visibilitySettings"
+                                                                                                  Request="@model.ViewRequestItem"
+                                                                                                  IsITDepartment="@IsITDepartment" />
+                    </div>
+                }
+            }
+
+            <div style="display: @(CurrentSection == "WorkflowHistory" ? "block" : "none")">
+                @if (model.AccessGroups.Contains(ConstantHelper.SPSecurityGroup.ElanAdmin))
+                {
+                    <AdminWorkflowHistoryTab WorkflowHistoyModel="@model.PartialModelAdminWorkflowHistory" spHostUrl="@spHostUrl" accessToken="@accessToken" OnAdminWorkflowHistoryChanged="OnAdminWorkflowHistoryChanged" />
+                }
+                else
+                {
+                    <WorkflowHistoryTab WorkflowHistoyModel="@model.PartialModelWorkflowHistory" />
+                }
+            </div>
+            <div style="display: @(CurrentSection == "Changes" ? "block" : "none")">
+                <MHA.ELAN.Web.Components.Pages.ApprovalFormComponents.ChangesTab ChangesModel="@model.changes" />
+            </div>
+        }
+    </div>
+</div>

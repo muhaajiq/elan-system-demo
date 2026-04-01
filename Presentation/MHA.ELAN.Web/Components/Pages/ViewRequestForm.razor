@@ -1,0 +1,169 @@
+﻿@page "/ViewRequestForm"
+@page "/ViewRequestForm/{CurrentSection}"
+@attribute [Authorize]
+@inject WorkflowBL workflowBL
+@inject RequestBL requestBL
+@inject NavigationManager Navigation
+@inject NavigationHelper NavigationHelper
+@inject TokenHelper TokenHelper
+@inject LogHelper LogHelper
+@inject IJSRuntime JS
+
+<PageTitle>View Request Form</PageTitle>
+
+<PageHeader Title=@($"View Request Form ({(model.RequestItem.RequestType ?? "")})")
+            ReferenceNo="@model.RequestItem.ReferenceNo"
+            WorkflowStatus="@model.RequestItem.WorkflowStatus" />
+
+
+<div class="d-flex">
+    <div class="flex-fill py-4 px-5">
+        @if (model.IsLoaded && model.RequestItem.RequestID == null)
+        {
+            <div class="alert alert-danger m-3" role="alert">
+                <strong>Error:</strong> Request not available!
+            </div>
+            <div class="d-flex justify-content-end gap-2 mb-3 px-3">
+                <button type="button" class="btn btn-outline-dark" @onclick="Close">Close</button>
+            </div>
+        }
+        else if (model.IsLoaded)
+        {
+            <div style="display: @(CurrentSection == "EmployeeDetails" ? "block" : "none")">
+                <DisplayEmployeeDetailsTab Request="@model.RequestItem" EmployeeDetails="@model.EmployeeDetailsItem" />
+            </div>
+            <div style="display: @(CurrentSection == "ITRequirements" ? "block" : "none")">
+                <DisplayITRequirementsTab EmployeeDetails="@model.EmployeeDetailsItem" ITRequirements="@model.ITRequirementsItems" FolderPermissions="@model.FolderPermissionsItems" VisibilitySettings="@visibilitySettingsModel" />
+            </div>
+            <div style="display: @(CurrentSection == "Hardware" ? "block" : "none")">
+                <DisplayHardwareTab EmployeeDetails="@model.EmployeeDetailsItem" Hardwares="@model.HardwareItems" VisibilitySettings="@visibilitySettingsModel" />
+            </div>
+            //TODO: Add chceking for admin group - access to admin workflow history, otherwise show user workflow history
+            <div style="display: @(CurrentSection == "WorkflowHistory" ? "block" : "none")">
+                <AdminWorkflowHistoryTab WorkflowHistoyModel="@model.PartialModelAdminWorkflowHistory" spHostUrl="@spHostUrl" accessToken="@accessToken" OnAdminWorkflowHistoryChanged="OnAdminWorkflowHistoryChanged" />
+            </div>
+            <div style="display: @(CurrentSection == "Changes" ? "block" : "none")">
+                <DisplayChangesTab ChangesModel="@model.ChangesItems" />
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    // ================================
+    // Parameters
+    // ================================
+    [SupplyParameterFromQuery(Name = ConstantHelper.ParameterQuery.SPHostUrl)]
+    [Parameter]
+    public string spHostUrl { get; set; }
+    public string accessToken = string.Empty;
+
+    [SupplyParameterFromQuery(Name = ConstantHelper.ParameterQuery.RequestId)]
+    [Parameter]
+    public int RequestID { get; set; }
+
+    [Parameter]
+    public string CurrentSection { get; set; } = "EmployeeDetails";
+
+    // ================================
+    // Properties
+    // ================================
+    public ViewModelViewRequestForm model { get; set; } = new();
+    public RequestFormVisibilitySettings visibilitySettingsModel { get; set; } = new();
+
+    // ================================
+    // Load Data
+    // ================================
+    protected override async Task OnInitializedAsync()
+    {
+        accessToken = await TokenHelper.GetUserAccessToken();
+
+        // await LoadData();
+
+        // if (!string.IsNullOrEmpty(model.CurrentStage)) visibilitySettingsModel = await requestBL.SetVisibilitySettings(model.CurrentStage);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadData();
+
+            if (!string.IsNullOrEmpty(model.CurrentStage)) visibilitySettingsModel = await requestBL.SetVisibilitySettings(model.CurrentStage);
+
+            model.IsLoaded = true;
+
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("showSwalGeneralLoading", "Loading Request Data", "Please wait while we load the request data...");
+
+            model.RequestID = RequestID;
+            model = await requestBL.InitRequestDisplayForm(model, spHostUrl, accessToken);
+
+            if (!model.IsValid) return;
+
+            int? processId = model.RequestItem.ProcessID.Value;
+
+            if (processId == null) return;
+
+            if (model.AccessGroups.Contains(ConstantHelper.SPSecurityGroup.ElanAdmin))
+            {
+                model.PartialModelAdminWorkflowHistory = await workflowBL.InitAdminWFHistory(processId.Value, spHostUrl, accessToken);
+            }
+            else
+            {
+                model.PartialModelWorkflowHistory = await workflowBL.InitWorkflowHistory(processId.Value, spHostUrl, accessToken);
+            }
+            await JS.InvokeVoidAsync("Swal.close");
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("Swal.close");
+            await JS.InvokeVoidAsync("showSwalError", "Failed to load request data.");
+
+            LogHelper.LogMessage("ViewRequestForm - LoadData Error: " + ex.ToString());
+        }
+    }
+
+    // ================================
+    // Lifecycle
+    // ================================
+    protected override void OnParametersSet()
+    {
+        EnsureValidSection();
+    }
+
+    // ================================
+    // Utility Methods
+    // ================================
+    private void EnsureValidSection()
+    {
+        var allowedSections = new[] {
+            ConstantHelper.RequestForm.Section.EmployeeDetails,
+            ConstantHelper.RequestForm.Section.ITRequirements,
+            ConstantHelper.RequestForm.Section.Hardware,
+            ConstantHelper.RequestForm.Section.WorkflowHistory,
+            ConstantHelper.RequestForm.Section.Changes };
+        if (!allowedSections.Contains(CurrentSection))
+        {
+            CurrentSection = ConstantHelper.RequestForm.Section.EmployeeDetails;
+        }
+    }
+
+    private async Task OnAdminWorkflowHistoryChanged()
+    {
+        await LoadData();
+        StateHasChanged();
+    }
+
+    private void Close()
+    {
+        Navigation.NavigateTo(NavigationHelper.BuildUrl("/RequestListing"));
+    }
+}

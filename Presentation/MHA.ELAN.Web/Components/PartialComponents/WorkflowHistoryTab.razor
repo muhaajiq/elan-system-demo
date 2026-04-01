@@ -1,0 +1,62 @@
+﻿<h3 class="task-title">Workflow :</h3>
+<div class="task-underline"></div>
+
+<div class="workflow-history-section">
+    <table class="table table-bordered">
+        <thead class="table-dark text-center">
+            <tr>
+                <th>Workflow Stage</th>
+                <th>Assignee Name</th>
+                <th>Assigned Date</th>
+                <th>Due date</th>
+                <th>Status</th>
+                <th>Actioned Date</th>
+                <th>Comments</th>
+                <th>Actioned By</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (WorkflowHistoyModel.WorkflowHistoryList.Count == 0)
+            {
+                <tr>
+                    <td colspan="9" class="text-center text-muted">No workflow History.</td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var item in WorkflowHistoyModel.WorkflowHistoryList)
+                {
+                    <tr class="align-middle">
+                        <td>@item.StepName</td>
+                        <td>@item.AssigneeName</td>
+                        <td>@item.AssignedDate</td>
+                        <td>@item.DueDate</td>
+                        <td>
+                            @{
+                                var cssClass = item.Status switch
+                                {
+                                    ConstantHelper.TaskStatus.Completed => "complete-color",
+                                    ConstantHelper.TaskStatus.IN_Progress => "in-progress-color",
+                                    ConstantHelper.TaskStatus.Reassigned => "reassigned-color",
+                                    ConstantHelper.TaskStatus.Removed => "removed-color",
+                                    _ => "default-color"
+                                };
+                            }
+                            <span class="@cssClass">@item.Status</span>
+                        </td>
+                        <td>@item.ActionedDate</td>
+                        <td>@item.Comments</td>
+                        <td>@item.ActionedByName</td>
+                        <td>@item.Action</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public PartialModelWorkflowHistory WorkflowHistoyModel { get; set; }
+}

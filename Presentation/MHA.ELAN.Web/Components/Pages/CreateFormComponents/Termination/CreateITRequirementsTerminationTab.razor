@@ -1,0 +1,334 @@
+﻿@inject NavigationManager Navigation
+@inject RequestBL RequestBL
+@inject TokenHelper TokenHelper
+@inject TempMessageService MessageService
+
+<h3 class="task-title">IT Requirements</h3>
+<div class="task-underline"></div>
+
+@if (ITRequirementsVM.RequestModelHasError && !string.IsNullOrEmpty(ITRequirementsVM.RequestModelErrorMessage))
+{
+    <div class="alert alert-danger" role="alert">
+        @((MarkupString)ITRequirementsVM.RequestModelErrorMessage)
+    </div>
+}
+else
+{
+    <div class="it-section">
+        <!-- Designation -->
+        <div class="row mb-3" style="font-size: 17px;">
+            <div class="col-auto d-flex align-items-center mb-2">
+                <label class="form-label mb-0">Designation:</label>
+            </div>
+            <div class="col-md-4">
+                @if (string.IsNullOrWhiteSpace(ITRequirementsVM.Designation))
+                {
+                    <div class="text-danger">Please select a Designation in Employee Details.</div>
+                }
+                else
+                {
+                    <div class="fw-bold">@ITRequirementsVM.Designation</div>
+                }
+            </div>
+        </div>
+
+        <!-- Infra -->
+        <h3 class="task-subtitle mb-3">Infra</h3>
+
+        @if (!FilteredInfraOptions.Any())
+        {
+            <div class="fst-italic text-muted">-- Not Available --</div>
+        }
+        else
+        {
+            <div class="card border-0 shadow-sm mb-4 p-3 bg-white">
+                @foreach (var option in FilteredInfraOptions)
+                {
+                    <div class="d-flex align-items-center border-bottom py-2">
+                        <span class="me-2">
+                            <i class="bi @(option.IsSelected ? "bi-check-circle-fill text-success" : "bi-x-circle-fill text-muted")"></i>
+                        </span>
+                        <span class="fs-6 fw-normal @(option.IsSoftRemoved ? "text-decoration-line-through text-muted" : "")">
+                            @option.Name
+                        </span>
+
+                        @if (option.IsSoftRemoved)
+                        {
+                            <span class="badge ms-2 bg-danger">Removed</span>
+                        }
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- Applications -->
+        <h3 class="task-subtitle mt-3 mb-3">Applications</h3>
+
+        @if (!FilteredApplicationOptions.Any())
+        {
+            <div class="fst-italic text-muted">-- Not Available --</div>
+        }
+        else
+        {
+            <div class="card border-0 shadow-sm mb-4 p-3 bg-white">
+                @foreach (var option in FilteredApplicationOptions)
+                {
+                    <div class="d-flex align-items-center border-bottom py-2">
+                        <span class="me-2">
+                            <i class="bi @(option.IsSelected ? "bi-check-circle-fill text-success" : "bi-x-circle-fill text-muted")"></i>
+                        </span>
+                        <span class="fs-6 fw-normal @(option.IsSoftRemoved ? "text-decoration-line-through text-muted" : "")">
+                            @option.Name
+                        </span>
+
+                        @if (option.IsSoftRemoved)
+                        {
+                            <span class="badge ms-2 bg-danger">Removed</span>
+                        }
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- Folder Permissions -->
+        <div class="row mb-2 mt-4">
+            <div class="col-12 d-flex justify-content-between align-items-center">
+                <h3 class="task-subtitle">Folder Permissions</h3>
+            </div>
+        </div>
+        @if (ITRequirementsVM.FolderPermissions != null)
+        {
+            <table class="table table-bordered">
+                <thead class="table-dark text-center">
+                    <tr>
+                        <th>Folder Name / Path</th>
+                        <th>Read</th>
+                        <th>Write</th>
+                        <th>Delete</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (ITRequirementsVM.FolderPermissions.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">No folders added.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var folder in ITRequirementsVM.FolderPermissions)
+                        {
+                            <tr class="@(folder.IsTempRemoved || folder.IsRemoved ? "table-danger" : "")">
+                                <td class="@(folder.IsRemoved ? "text-decoration-line-through text-muted" : "")">
+                                    @folder.NameOrPath
+                                </td>
+                                <td class="text-center">
+                                    <i class="bi @(folder.IsRead ? "bi-check-circle-fill text-success" : "bi-x-circle-fill text-muted")"></i>
+                                </td>
+                                <td class="text-center">
+                                    <i class="bi @(folder.IsWrite ? "bi-check-circle-fill text-success" : "bi-x-circle-fill text-muted")"></i>
+                                </td>
+                                <td class="text-center">
+                                    <i class="bi @(folder.IsDelete ? "bi-check-circle-fill text-success" : "bi-x-circle-fill text-muted")"></i>
+                                </td>
+                                <td class="text-center">
+                                    @if (folder.IsTempRemoved)
+                                    {
+                                        <span class="badge bg-danger">@folder.TempStatus</span>
+                                    }
+                                    else if (folder.IsRemoved)
+                                    {
+                                        <span class="badge bg-danger">Removed</span>
+                                    }
+                                    else if (!string.IsNullOrEmpty(folder.Status))
+                                    {
+                                        <span>@folder.Status</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public ViewModelITRequirements ITRequirementsVM { get; set; }
+    [Parameter, EditorRequired]
+    public ViewModelRequest RequestModel { get; set; }
+
+    [Parameter] public string DesignationFromEmployeeDetails { get; set; }
+    [Parameter] public int? DesignationIDFromEmployeeDetails { get; set; }
+
+    private List<ITOption> FilteredInfraOptions { get; set; } = new();
+    private List<ITOption> FilteredApplicationOptions { get; set; } = new();
+    private bool _folderOriginalsInitialized = false;
+    private bool _infraOriginalsInitialized = false;
+    private bool _appOriginalsInitialized = false;
+
+    protected override void OnParametersSet()
+    {
+        SetDesignationFromParent();
+        FilterOptionsByDesignation();
+        SyncSelectionsToViewModel();
+
+        if (!_folderOriginalsInitialized && ITRequirementsVM?.FolderPermissions != null)
+        {
+            foreach (var folder in ITRequirementsVM.FolderPermissions)
+            {
+                folder.OriginalRead = folder.IsRead;
+                folder.OriginalWrite = folder.IsWrite;
+                folder.OriginalDelete = folder.IsDelete;
+            }
+
+            _folderOriginalsInitialized = true;
+        }
+    }
+
+    private void SetDesignationFromParent()
+    {
+        ITRequirementsVM.Designation ??= DesignationFromEmployeeDetails;
+
+        if (DesignationIDFromEmployeeDetails > 0)
+        {
+            ITRequirementsVM.DesignationID = DesignationIDFromEmployeeDetails.Value;
+        }
+        else
+        {
+            ITRequirementsVM.DesignationID = 0;
+        }
+    }
+
+    private void FilterOptionsByDesignation()
+    {
+        if (ITRequirementsVM.DesignationID > 0)
+        {
+            int designationId = ITRequirementsVM.DesignationID;
+
+            FilteredInfraOptions = ITRequirementsVM.InfraOptions
+                .Where(opt => opt.DesignationID is null || opt.DesignationID == designationId)
+                .ToList();
+
+            FilteredApplicationOptions = ITRequirementsVM.ApplicationOptions
+                .Where(opt => opt.DesignationID is null || opt.DesignationID == designationId)
+                .ToList();
+
+            if (!_infraOriginalsInitialized)
+            {
+                foreach (var opt in FilteredInfraOptions)
+                    opt.OriginalSelected = opt.IsSelected;
+
+                _infraOriginalsInitialized = true;
+            }
+
+            if (!_appOriginalsInitialized)
+            {
+                foreach (var opt in FilteredApplicationOptions)
+                    opt.OriginalSelected = opt.IsSelected;
+
+                _appOriginalsInitialized = true;
+            }
+        }
+        else
+        {
+            FilteredInfraOptions.Clear();
+            FilteredApplicationOptions.Clear();
+        }
+    }
+
+    public void SyncSelectionsToViewModel()
+    {
+        var now = DateTime.Now;
+
+        var existing = ITRequirementsVM.SelectedITRequirements.ToDictionary(x => x.ItemID);
+
+        ITRequirementsVM.SelectedITRequirements.Clear();
+
+        void AddOrUpdate(ITOption opt, string type)
+        {
+            if (existing.TryGetValue(opt.ItemID, out var old))
+            {
+                ITRequirementsVM.SelectedITRequirements.Add(new ITRequirements
+                {
+                    ID = old.ID,
+                    ItemID = old.ItemID,
+                    ItemTitle = old.ItemTitle ?? opt.Name,
+                    Type = old.Type ?? type,
+                    IsAdded = old.IsAdded,
+                    IsRemoved = false,
+                    DateAdded = old.DateAdded ?? now,
+                    DateRemoved = null,
+                    Remark = old.Remark
+                });
+            }
+            else
+            {
+                // New selection
+                ITRequirementsVM.SelectedITRequirements.Add(new ITRequirements
+                {
+                    ItemID = opt.ItemID,
+                    ItemTitle = opt.Name,
+                    Type = type,
+                    IsAdded = true,
+                    DateAdded = now,
+                    IsRemoved = false,
+                    Remark = string.Empty
+                });
+            }
+        }
+
+        // Infra
+        foreach (var opt in FilteredInfraOptions.Where(o => o.IsSelected))
+        {
+            AddOrUpdate(opt, ConstantHelper.RequestForm.ITRequirementsType.Infra);
+        }
+
+        // Applications
+        foreach (var opt in FilteredApplicationOptions.Where(o => o.IsSelected))
+        {
+            AddOrUpdate(opt, ConstantHelper.RequestForm.ITRequirementsType.Applications);
+        }
+
+        // Handle deselections (mark removed)
+        foreach (var old in existing.Values)
+        {
+            bool stillSelected =
+                FilteredInfraOptions.Any(o => o.ItemID == old.ItemID && o.IsSelected) ||
+                FilteredApplicationOptions.Any(o => o.ItemID == old.ItemID && o.IsSelected);
+
+            if (!stillSelected)
+            {
+                ITRequirementsVM.SelectedITRequirements.Add(new ITRequirements
+                {
+                    ID = old.ID,
+                    ItemID = old.ItemID,
+                    ItemTitle = old.ItemTitle,
+                    Type = old.Type,
+                    IsAdded = false,
+                    IsRemoved = true,
+                    DateAdded = null,
+                    DateRemoved = now,
+                    Remark = old.Remark
+                });
+            }
+            else if (old.IsRemoved)
+            {
+                var opt = FilteredInfraOptions.FirstOrDefault(o => o.ItemID == old.ItemID)
+                ?? FilteredApplicationOptions.FirstOrDefault(o => o.ItemID == old.ItemID);
+                if (opt != null)
+                {
+                    opt.IsSoftRemoved = true;
+                    opt.IsSelected = false;
+                }
+            }
+        }
+    }
+
+    private bool IsTerminationRequest =>
+        RequestModel != null &&
+        RequestModel.RequestType == ConstantHelper.RequestForm.RequestType.TerminationRequestType;
+}

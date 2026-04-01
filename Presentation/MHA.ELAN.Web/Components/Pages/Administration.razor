@@ -1,0 +1,81 @@
+﻿@page "/administration"
+@attribute [Authorize]
+@inject AdministrationBL administrationBL
+@inject TokenHelper TokenHelper
+@inject LogHelper LogHelper
+
+<PageTitle>Administration</PageTitle>
+
+<div class="p-4">
+    <h2 class="pageTitle mt-2">Administration</h2>
+    @if (vm.IsAuthorized)
+    {
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <strong>Project Settings</strong>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        <a href="@vm.ReportURL" target="_blank" class="list-group-item list-group-item-action">Report URL</a>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm mt-4">
+                    <div class="card-header">
+                        <strong>Running Number Settings</strong>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        <a href="@vm.RunningNumberFormatURL" target="_blank" class="list-group-item list-group-item-action">Running Number Format</a>
+                        <a href="@vm.RunningNumberURL" target="_blank" class="list-group-item list-group-item-action">Running Number</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <strong>Master Data List</strong>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        <a href="@vm.CompanyURL" target="_blank" class="list-group-item list-group-item-action">Company</a>
+                        <a href="@vm.DepartmentURL" target="_blank" class="list-group-item list-group-item-action">Department</a>
+                        <a href="@vm.DesignationURL" target="_blank" class="list-group-item list-group-item-action">Designation</a>
+                        <a href="@vm.GradeURL" target="_blank" class="list-group-item list-group-item-action">Grade</a>
+                        <a href="@vm.HardwareURL" target="_blank" class="list-group-item list-group-item-action">Hardware</a>
+                        <a href="@vm.ITRequirementsURL" target="_blank" class="list-group-item list-group-item-action">IT Requirements</a>
+                        <a href="@vm.LocationURL" target="_blank" class="list-group-item list-group-item-action">Location</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <MHA.ELAN.Web.Components.PartialComponents.AccessDenied />
+    }
+
+</div>
+
+
+@code {
+    [SupplyParameterFromQuery(Name = ConstantHelper.ParameterQuery.SPHostUrl)]
+    [Parameter]
+    public string spHostUrl { get; set; }
+    public string accessToken = string.Empty;
+
+    ViewModelAdministrationListing vm = new ViewModelAdministrationListing();
+
+    protected override async Task OnInitializedAsync()
+    {
+        accessToken = await TokenHelper.GetUserAccessToken();
+
+        try
+        {
+            vm = await administrationBL.InitAdministrationListing(spHostUrl, accessToken);
+        }
+        catch (Exception ex)
+        {
+            LogHelper.LogMessage("AdministrationBL - InitAdministrationListing Error:" + ex.ToString());
+        }
+    }
+}

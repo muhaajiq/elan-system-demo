@@ -1,0 +1,547 @@
+﻿@inject NavigationManager Navigation
+@inject NavigationHelper NavigationHelper
+@inject TempMessageService MessageService
+@inject PeoplePickerHelper PeoplePickerHelper
+@inject LogHelper logHelper
+@inject IJSRuntime JS
+@inject IOptions<JSONAppSettings> appSettings
+
+<h3 class="task-title">Employee Details</h3>
+<div class="task-underline"></div>
+
+@if (RequestModel.HasError && !string.IsNullOrEmpty(RequestModel.ErrorMessage))
+{
+    <div class="alert alert-danger" role="alert">
+        @((MarkupString)RequestModel.ErrorMessage)
+    </div>
+
+    <div class="d-flex justify-content-end gap-2 mt-3 mb-3">
+        <button type="button" class="btn btn-outline-dark" @onclick="Close">Close</button>
+    </div>
+}
+else
+{
+    <div class="employee-section">
+        <EditForm Model="EmployeeDetailsVM">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <!-- Type -->
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label required-asterisk">Type</label>
+                </div>
+                <div class="col-md-4">
+                    <InputSelect class="form-select"
+                                 Value="RequestModel.RequestType"
+                                 ValueChanged="@(EventCallback.Factory.Create<string>(this, HandleRequestTypeChange))"
+                                 ValueExpression="@(() => RequestModel.RequestType)">
+                        <option value="">-- Select a request type --</option>
+                        @foreach (var item in RequestModel.RequestTypeList)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => RequestModel.RequestType)" />
+                </div>
+            </div>
+
+            <!-- Company -->
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label required-asterisk">Company</label>
+                </div>
+                <div class="col-md-4">
+                    <InputSelect class="form-select" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.CompanyID">
+                        <option value="">-- Select a company --</option>
+                        @foreach (var item in EmployeeDetailsVM.EmployeeDetailsVM.CompanyList)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => EmployeeDetailsVM.EmployeeDetailsVM.CompanyID)" />
+                </div>
+            </div>
+
+            <!-- Employee Name -->
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label required-asterisk">Name</label>
+                </div>
+                <div class="col-md-4">
+                    <PeoplePickerComponent SpHostUrl="@spHostUrl"
+                                           AccessToken="@accessToken"
+                                           @bind-SelectedUser="@EmployeeDetailsVM.EmployeeDetailsVM.Employee"
+                                           OnUserSelected="OnEmployeeSelected" />
+                </div>
+            </div>
+
+            <hr class="my-4" />
+
+            @if (IsTerminationRequest)
+            {
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-black text-white d-flex justify-content-between align-items-center">
+                        <span>
+                            <i class="bi bi-people-fill me-2"></i>
+                            Subordinates
+                        </span>
+                        <span class="badge bg-danger fs-6">
+                            Total: @(EmployeeDetailsVM.EmployeeDetailsVM.Subordinates?.Count ?? 0)
+                        </span>
+                    </div>
+
+                    <div class="card-body">
+                        @if (EmployeeDetailsVM.EmployeeDetailsVM.Subordinates?.Any() == true)
+                        {
+                            <p class="text-muted mb-3">
+                                The selected employee has the following subordinates:
+                            </p>
+
+                            <ul class="list-group list-group-flush mb-4">
+                                @foreach (var subordinate in EmployeeDetailsVM.EmployeeDetailsVM.Subordinates)
+                                {
+                                    <li class="list-group-item d-flex justify-content-between align-items-center border-0 border-bottom">
+                                        <div>
+                                            <strong>@subordinate.Name</strong>
+                                            <small class="text-muted">(@subordinate.Email)</small>
+                                        </div>
+                                        <span class="badge bg-secondary">@subordinate.Status</span>
+                                    </li>
+                                }
+                            </ul>
+
+                            @if (EmployeeDetailsVM.EmployeeDetailsVM.NewReportingManager != null
+                                            && !string.IsNullOrWhiteSpace(EmployeeDetailsVM.EmployeeDetailsVM.NewReportingManager.Name))
+                            {
+                                <div class="alert alert-info mt-3">
+                                    <strong>New Manager:</strong>
+                                    @EmployeeDetailsVM.EmployeeDetailsVM.NewReportingManager.Name
+                                    @if (!string.IsNullOrWhiteSpace(EmployeeDetailsVM.EmployeeDetailsVM.NewReportingManager.Email))
+                                    {
+                                        <span class="text-muted">(@EmployeeDetailsVM.EmployeeDetailsVM.NewReportingManager.Email)</span>
+                                    }
+                                </div>
+                            }
+
+                            <div class="text-end">
+                                <button type="button" class="btn btn-danger" @onclick="ShowReassignModal">
+                                    <i class="bi bi-arrow-repeat me-1"></i> Reassign New Manager
+                                </button>
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted mb-0">
+                                No subordinates available for this employee.
+                            </p>
+                        }
+                    </div>
+                </div>
+            }
+
+            @if (showReassignModal)
+            {
+                <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+                    <div class="modal-dialog">
+                        <div class="modal-content shadow">
+                            <div class="modal-header bg-black text-white">
+                                <h5 class="modal-title text-white">
+                                    <i class="bi bi-person-gear me-2"></i> Reassign Reporting Manager
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" @onclick="HideReassignModal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p class="text-muted mb-3">Select the new reporting manager for all subordinates:</p>
+
+                                <PeoplePickerComponent SpHostUrl="@spHostUrl"
+                                                       AccessToken="@accessToken"
+                                                       @bind-SelectedUser="@newManager"
+                                                       OnUserSelected="OnNewManagerSelected" />
+                            </div>
+                            <div class="modal-footer">
+                                <button class="btn btn-outline-secondary" @onclick="HideReassignModal">
+                                    <i class="bi bi-x-circle me-1"></i> Cancel
+                                </button>
+                                <button class="btn btn-danger" @onclick="ConfirmReassign">
+                                    <i class="bi bi-check-circle me-1"></i> Confirm
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Employee ID -->
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label required-asterisk">Employee ID</label>
+                </div>
+                <div class="col-md-4">
+                    <InputText class="form-control" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.EmployeeID" disabled="@(IsTerminationRequest && !RequestModel.ModifyEmployeeDetails)" />
+                    <ValidationMessage For="@(() => EmployeeDetailsVM.EmployeeDetailsVM.EmployeeID)" />
+                </div>
+            </div>
+
+            <!-- Designation -->
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label required-asterisk">Designation</label>
+                </div>
+                <div class="col-md-4">
+                    <InputSelect class="form-select"
+                                 Value="EmployeeDetailsVM.EmployeeDetailsVM.DesignationID"
+                                 ValueChanged="@(async (int? newValue) => await OnDesignationChangedAsync(newValue))"
+                                 ValueExpression="@(() => EmployeeDetailsVM.EmployeeDetailsVM.DesignationID)"
+                                 disabled="@(IsTerminationRequest && !RequestModel.ModifyEmployeeDetails)">
+                        <option value="">-- Select a designation --</option>
+                        @foreach (var item in EmployeeDetailsVM.EmployeeDetailsVM.DesignationList)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => EmployeeDetailsVM.EmployeeDetailsVM.DesignationID)" />
+                </div>
+            </div>
+
+            <!-- Grade -->
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label required-asterisk">Grade</label>
+                </div>
+                <div class="col-md-4">
+                    <InputSelect class="form-select" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.GradeID" disabled="@(IsTerminationRequest && !RequestModel.ModifyEmployeeDetails)">
+                        <option value="">-- Select a grade --</option>
+                        @foreach (var item in EmployeeDetailsVM.EmployeeDetailsVM.GradeList)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => EmployeeDetailsVM.EmployeeDetailsVM.GradeID)" />
+                </div>
+            </div>
+
+            <!-- Department -->
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label required-asterisk">Department</label>
+                </div>
+                <div class="col-md-4">
+                    <InputSelect class="form-select" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.DepartmentID" disabled="@(IsTerminationRequest && !RequestModel.ModifyEmployeeDetails)">
+                        <option value="">-- Select a department --</option>
+                        @foreach (var item in EmployeeDetailsVM.EmployeeDetailsVM.DepartmentList)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => EmployeeDetailsVM.EmployeeDetailsVM.DepartmentID)" />
+                </div>
+            </div>
+
+            <!-- Reporting Manager -->
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label required-asterisk">Reporting Manager</label>
+                </div>
+                <div class="col-md-4">
+                    <PeoplePickerComponent SpHostUrl="@spHostUrl"
+                                           AccessToken="@accessToken"
+                                           @bind-SelectedUser="@EmployeeDetailsVM.EmployeeDetailsVM.ReportingManager"
+                                           OnUserSelected="OnReportingManagerSelected"
+                                           Disabled="@(IsTerminationRequest && !RequestModel.ModifyEmployeeDetails)" />
+                </div>
+            </div>
+
+            <!-- Location -->
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label required-asterisk">Location</label>
+                </div>
+                <div class="col-md-4">
+                    <InputSelect class="form-select" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.LocationID" disabled="@(IsTerminationRequest && !RequestModel.ModifyEmployeeDetails)">
+                        <option value="">-- Select a location --</option>
+                        @foreach (var item in EmployeeDetailsVM.EmployeeDetailsVM.LocationList)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => EmployeeDetailsVM.EmployeeDetailsVM.LocationID)" />
+                </div>
+            </div>
+
+            <!-- Mobile No -->
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label required-asterisk">Mobile No.</label>
+                </div>
+                <div class="col-md-4">
+                    <InputText class="form-control" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.MobileNo" disabled="@(IsTerminationRequest && !RequestModel.ModifyEmployeeDetails)" />
+                    <ValidationMessage For="@(() => EmployeeDetailsVM.EmployeeDetailsVM.MobileNo)" />
+                </div>
+            </div>
+
+            <!-- Contract/Temporary Staff -->
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label required-asterisk me-2">Contract/Temporary Staff</label>
+                </div>
+                <div class="col-md-4">
+                    <InputSelect class="form-select" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.ContractTemporaryStaff" @onchange="OnContractTypeChanged" disabled="@(IsTerminationRequest && !RequestModel.ModifyEmployeeDetails)">
+                        <option value="">-- Select a staff type --</option>
+                        @foreach (var item in EmployeeDetailsVM.EmployeeDetailsVM.ContractTypeList)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => EmployeeDetailsVM.EmployeeDetailsVM.ContractTemporaryStaff)" />
+                </div>
+            </div>
+
+            <!-- Joined Date -->
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label required-asterisk">Joined Date</label>
+                </div>
+                <div class="col-md-4">
+                    <RadzenDatePicker @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.JoinedDate" Disabled="@(IsTerminationRequest && !RequestModel.ModifyEmployeeDetails)" DateFormat="@ConstantHelper.DateFormat.DefaultDateFormat" />
+                    <ValidationMessage For="@(() => EmployeeDetailsVM.EmployeeDetailsVM.JoinedDate)" />
+                </div>
+
+                <!-- End Date -->
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label @(IsEndDateRequired ? "required-asterisk" : "")">End Date</label>
+                </div>
+                <div class="col-md-4">
+                    <input type="date"
+                           class="form-control"
+                           @bind="EmployeeDetailsVM.EmployeeDetailsVM.EndDate"
+                           disabled="@(!IsEndDateEnabled)"
+                           min="@GetJoinedDateForMin()" placeholder="-" />
+                    <ValidationMessage For="@(() => EmployeeDetailsVM.EmployeeDetailsVM.EndDate)" />
+                </div>
+            </div>
+
+            <!-- Descriptions -->
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label">Description 1</label>
+                </div>
+                <div class="col-md-4">
+                    <InputText class="form-control" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.Description1" disabled="@(IsTerminationRequest && !RequestModel.ModifyEmployeeDetails)" />
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label">Description 2</label>
+                </div>
+                <div class="col-md-4">
+                    <InputText class="form-control" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.Description2" disabled="@(IsTerminationRequest && !RequestModel.ModifyEmployeeDetails)" />
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label">Description 3</label>
+                </div>
+                <div class="col-md-4">
+                    <InputText class="form-control" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.Description3" disabled="@(IsTerminationRequest && !RequestModel.ModifyEmployeeDetails)" />
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label">Description 4</label>
+                </div>
+                <div class="col-md-4">
+                    <InputText class="form-control" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.Description4" disabled="@(IsTerminationRequest && !RequestModel.ModifyEmployeeDetails)" />
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label">Description 5</label>
+                </div>
+                <div class="col-md-4">
+                    <InputText class="form-control" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.Description5" disabled="@(IsTerminationRequest && !RequestModel.ModifyEmployeeDetails)" />
+                </div>
+            </div>
+
+            <hr />
+
+            <!-- Remarks -->
+            <div class="row mb-3">
+                <div class="col-md-2 d-flex align-items-center">
+                    <label class="form-label">Remarks</label>
+                </div>
+                <div class="col-md-10">
+                    <InputTextArea class="form-control" @bind-Value="EmployeeDetailsVM.EmployeeDetailsVM.Remarks" rows="3" disabled="@(IsTerminationRequest && !RequestModel.ModifyEmployeeDetails)" />
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="d-flex justify-content-end gap-2 mt-3 mb-3">
+                <button type="button" class="btn btn-primary" @onclick="OnSave">Save</button>
+                <button type="button" class="btn btn-success" @onclick="OnSubmit">Submit</button>
+                <button type="button" class="btn btn-outline-dark" @onclick="Close">Close</button>
+            </div>
+        </EditForm>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public ViewModelRequest RequestModel { get; set; }
+    [Parameter, EditorRequired]
+    public ViewModelEmployeeDetails EmployeeDetailsVM { get; set; }
+    [Parameter, EditorRequired]
+    public string spHostUrl { get; set; }
+    [Parameter, EditorRequired]
+    public string accessToken { get; set; }
+
+    [Parameter] public ViewModelITRequirements ITRequirementsVM { get; set; }
+    [Parameter] public ViewModelHardware HardwareVM { get; set; }
+    [Parameter] public EventCallback<ViewModelRequest> RequestModelChanged { get; set; }
+    [Parameter] public EventCallback OnSave { get; set; }
+    [Parameter] public EventCallback OnSubmit { get; set; }
+    [Parameter] public EventCallback<ViewModelEmployeeDetails> OnEmployeeDetailsChanged { get; set; }
+    [Parameter] public EventCallback<string> OnEmployeeSelectedLogin { get; set; }
+    [Parameter] public EventCallback<string> OnRequestTypeChanged { get; set; }
+
+    private bool showErrorAlert = false;
+    private CancellationTokenSource _errorAlertCts;
+    private bool showReassignModal = false;
+    private PeoplePickerUser newManager;
+
+    private bool IsEndDateEnabled =>
+        (RequestModel.RequestType?.Equals(ConstantHelper.RequestForm.RequestType.TerminationRequestType, StringComparison.OrdinalIgnoreCase) == true)
+        || (!string.IsNullOrEmpty(EmployeeDetailsVM.EmployeeDetailsVM.ContractTemporaryStaff)
+        && EmployeeDetailsVM.EmployeeDetailsVM.ContractTemporaryStaff != ConstantHelper.RequestForm.ContractType.Permanent);
+
+    private bool IsEndDateRequired =>
+        (RequestModel.RequestType?.Equals(ConstantHelper.RequestForm.RequestType.TerminationRequestType, StringComparison.OrdinalIgnoreCase) == true)
+        || (!string.IsNullOrWhiteSpace(EmployeeDetailsVM.EmployeeDetailsVM.ContractTemporaryStaff)
+        && EmployeeDetailsVM.EmployeeDetailsVM.ContractTemporaryStaff != ConstantHelper.RequestForm.ContractType.Permanent);
+
+    private async Task OnDesignationChangedAsync(int? newValue)
+    {
+        EmployeeDetailsVM.EmployeeDetailsVM.DesignationID = newValue;
+        EmployeeDetailsVM.EmployeeDetailsVM.DesignationTitle = EmployeeDetailsVM.EmployeeDetailsVM.DesignationList
+            .FirstOrDefault(d => int.TryParse(d.Value, out var id) && id == newValue)
+            ?.Text ?? "";
+
+        if (OnEmployeeDetailsChanged.HasDelegate)
+            await OnEmployeeDetailsChanged.InvokeAsync(EmployeeDetailsVM);
+    }
+
+    private void OnContractTypeChanged(ChangeEventArgs e)
+    {
+        EmployeeDetailsVM.EmployeeDetailsVM.ContractTemporaryStaff = e.Value?.ToString() ?? string.Empty;
+    }
+
+    private void OnReportingManagerSelected(PeoplePickerUser user)
+    {
+        if (user != null)
+        {
+            EmployeeDetailsVM.EmployeeDetailsVM.ReportingManagerName = user.Name;
+            EmployeeDetailsVM.EmployeeDetailsVM.ReportingManagerEmail = user.Email;
+            EmployeeDetailsVM.EmployeeDetailsVM.ReportingManagerLogin = user.Login;
+        }
+        else
+        {
+            EmployeeDetailsVM.EmployeeDetailsVM.ReportingManagerName = null;
+            EmployeeDetailsVM.EmployeeDetailsVM.ReportingManagerEmail = null;
+            EmployeeDetailsVM.EmployeeDetailsVM.ReportingManagerLogin = null;
+        }
+
+        StateHasChanged();
+    }
+
+    private async void OnEmployeeSelected(PeoplePickerUser user)
+    {
+        if (user != null)
+        {
+            EmployeeDetailsVM.EmployeeDetailsVM.EmployeeName = user.Name;
+            EmployeeDetailsVM.EmployeeDetailsVM.EmployeeEmail = user.Email;
+            EmployeeDetailsVM.EmployeeDetailsVM.EmployeeLogin = user.Login;
+
+            if (OnEmployeeSelectedLogin.HasDelegate)
+            {
+                await OnEmployeeSelectedLogin.InvokeAsync(user.Login);
+            }
+        }
+        else
+        {
+            EmployeeDetailsVM.EmployeeDetailsVM.EmployeeName = null;
+            EmployeeDetailsVM.EmployeeDetailsVM.EmployeeEmail = null;
+            EmployeeDetailsVM.EmployeeDetailsVM.EmployeeLogin = null;
+
+            await OnEmployeeSelectedLogin.InvokeAsync("");
+        }
+
+        StateHasChanged();
+    }
+
+    private void Close()
+    {
+        Navigation.NavigateTo(NavigationHelper.BuildUrl("/Home"));
+    }
+
+    private string GetJoinedDateForMin() =>
+        EmployeeDetailsVM.EmployeeDetailsVM.JoinedDate?.AddDays(1).ToString(ConstantHelper.DateFormat.JoinedDateFormat) ?? "";
+
+    private bool IsTerminationRequest =>
+        RequestModel != null &&
+        RequestModel.RequestType == ConstantHelper.RequestForm.RequestType.TerminationRequestType;
+
+    private async Task HandleRequestTypeChange(string newValue)
+    {
+        RequestModel.RequestType = newValue;
+
+        OnRequestTypeChanged.InvokeAsync(newValue);
+    }
+
+    private void ShowReassignModal()
+    {
+        showReassignModal = true;
+    }
+
+    private void HideReassignModal()
+    {
+        showReassignModal = false;
+        newManager = null;
+    }
+
+    private void OnNewManagerSelected(PeoplePickerUser user)
+    {
+        newManager = user;
+    }
+
+    private async Task ConfirmReassign()
+    {
+        if (newManager != null)
+        {
+            EmployeeDetailsVM.EmployeeDetailsVM.NewReportingManager = newManager;
+            EmployeeDetailsVM.EmployeeDetailsVM.NewReportingManagerLogin = newManager.Login ?? string.Empty;
+            EmployeeDetailsVM.EmployeeDetailsVM.NewReportingManagerName = newManager.Name ?? string.Empty;
+            EmployeeDetailsVM.EmployeeDetailsVM.NewReportingManagerEmail = newManager.Email ?? string.Empty;
+
+            foreach (var subordinate in EmployeeDetailsVM.EmployeeDetailsVM.Subordinates)
+            {
+                subordinate.ReportingManagerName = newManager.Name ?? string.Empty;
+                subordinate.ReportingManagerEmail = newManager.Email ?? string.Empty;
+                subordinate.ReportingManagerLogin = newManager.Login ?? string.Empty;
+            }
+
+            await JS.InvokeVoidAsync("showSwalSuccess", "New Reporting Manager has been selected");
+            MessageService.SuccessMessage = "Subordinates reassigned successfully.";
+        }
+        else
+        {
+            MessageService.ErrorMessage = "Please select a new manager.";
+        }
+
+        HideReassignModal();
+    }
+}
+

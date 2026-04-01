@@ -1,0 +1,217 @@
+﻿@inject IOptions<JSONAppSettings> appSettings
+
+<h3 class="task-title">Hardware</h3>
+<div class="task-underline"></div>
+
+<div class="hardware-section">
+    <!-- Designation -->
+    <div class="row mb-3">
+        <div class="col-auto d-flex align-items-center mb-2">
+            <label class="form-label mb-0">Designation:</label>
+        </div>
+        <div class="col-md-4">
+            <div class="fw-bold">@EmployeeDetails.EmployeeDetailsVM.DesignationTitle</div>
+        </div>
+    </div>
+
+    <!-- Assigned Items Table -->
+    <div class="row mb-2 mt-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <h3 class="task-subtitle">Assigned Items</h3>
+        </div>
+    </div>
+
+    @if (VisibilitySettings.ShowHardwareDetails && !VisibilitySettings.ShowColumnsAsEditable)
+    {
+        <table class="table table-bordered">
+            <thead class="table-dark text-center">
+                <tr>
+                    <th>Item</th>
+                    <th>Quantity</th>
+                    <th>Department</th>
+                    <th>Date Assigned</th>
+                    <th>Model</th>
+                    <th>Serial Number</th>
+                    <th>Remarks</th>
+                    <th>Remark History</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Hardwares.Count == 0)
+                {
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">No items assigned.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var item in Hardwares)
+                    {
+                        <tr class="align-middle">
+                            <td>
+                                @item.HardwareVM.ItemTitle
+                            </td>
+                            <td>
+                                @item.HardwareVM.Quantity
+                            </td>
+                            <td>
+                                @item.HardwareVM.DepartmentTitle
+                            </td>
+                            <td>
+                                @if (item.HardwareVM.DateAssigned != null && item.HardwareVM.DateAssigned != DateTime.MinValue)
+                                {
+                                    @item.HardwareVM.DateAssigned.Value.ToString(appSettings.Value.DefaultDateFormat)
+                                }
+                            </td>
+                            <td>
+                                @item.HardwareVM.Model
+                            </td>
+                            <td>
+                                @item.HardwareVM.SerialNumber
+                            </td>
+                            <td>
+                                @item.HardwareVM.Remarks
+                            </td>
+                            <td>
+                                @item.HardwareVM.RemarkHistory
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    }
+    else if (VisibilitySettings.ShowHardwareDetails && VisibilitySettings.ShowColumnsAsEditable)
+    {
+        <table class="table table-bordered">
+            <thead class="table-dark text-center">
+                <tr>
+                    <th>Item</th>
+                    <th>Quantity</th>
+                    <th>Department</th>
+                    <th>Date Assigned</th>
+                    <th>Model</th>
+                    <th>Serial Number</th>
+                    <th>Remarks</th>
+                    <th>Remark History</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Hardwares.Count == 0)
+                {
+                    <tr>
+                        <td colspan="8" class="text-center text-muted">No items assigned.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var item in Hardwares)
+                    {
+                        <tr class="align-middle">
+                            <td>
+                                @item.HardwareVM.ItemTitle
+                            </td>
+                            <td>
+                                @item.HardwareVM.Quantity
+                            </td>
+                            <td>
+                                @item.HardwareVM.DepartmentTitle
+                            </td>
+                            <td>
+                                @if (item.HardwareVM.DateAssigned != null && item.HardwareVM.DateAssigned != DateTime.MinValue)
+                                {
+                                    @item.HardwareVM.DateAssigned.Value.ToString(appSettings.Value.DefaultDateFormat)
+                                }
+                            </td>
+                            <td>
+                                @item.HardwareVM.Model
+                            </td>
+                            <td>
+                                @item.HardwareVM.SerialNumber
+                            </td>
+                            <td>
+                                @item.HardwareVM.Remarks
+                            </td>
+                            <td>
+                                @item.HardwareVM.RemarkHistory
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <table class="table table-bordered">
+            <thead class="table-dark text-center">
+                <tr>
+                    <th>Item</th>
+                    <th>Quantity</th>
+                    <th>Department</th>
+                    <th>Remarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Hardwares.Count == 0)
+                {
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">No items assigned.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var item in Hardwares)
+                    {
+                        <tr class="align-middle">
+                            <td>
+                                @item.HardwareVM.ItemTitle
+                            </td>
+                            <td>
+                                @item.HardwareVM.Quantity
+                            </td>
+                            <td>
+                                @item.HardwareVM.DepartmentTitle
+                            </td>
+                            <td>
+                                @item.HardwareVM.Remarks
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    }
+
+    @if (VisibilitySettings.ShowAcknowledgement)
+    {
+        <hr />
+
+        <div class="border rounded p-3 bg-light mt-3">
+            <h5 class="mb-3 acknowledgement-title">Acknowledgement</h5>
+
+            <div class="form-check mb-2">
+                <input type="checkbox" class="form-check-input" id="ack1" checked disabled />
+                <label class="form-check-label" for="ack1" style="font-weight: 100 !important">
+                    I hereby acknowledge that all assigned hardware and application(s) have been received in good condition and are functioning as intended. I confirm that no discrepancies or issues are present at the time of receipt.
+                </label>
+            </div>
+
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="ack2" checked disabled />
+                <label class="form-check-label" for="ack2" style="font-weight: 100 !important">
+                    I hereby agree to the terms and conditions associated with the assigned hardware and application(s), and accept full responsibility, including any applicable penalties, for loss, damage, or misuse occurring after receipt.
+                </label>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public RequestFormVisibilitySettings VisibilitySettings { get; set; }
+    [Parameter, EditorRequired]
+    public ViewModelEmployeeDetails EmployeeDetails { get; set; }
+    [Parameter, EditorRequired]
+    public List<ViewModelHardware> Hardwares { get; set; }
+}

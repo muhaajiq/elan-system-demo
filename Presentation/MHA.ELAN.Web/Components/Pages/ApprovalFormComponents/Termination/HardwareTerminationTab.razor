@@ -1,0 +1,261 @@
+﻿<h3 class="task-title">Hardware</h3>
+<div class="task-underline"></div>
+
+<div class="hardware-section">
+    <!-- Designation -->
+    <div class="row mb-3">
+        <div class="col-auto d-flex align-items-center mb-2">
+            <label class="form-label mb-0">Designation:</label>
+        </div>
+        <div class="col-md-4">
+            <div class="fw-bold">@EmployeeDetails.EmployeeDetailsVM.DesignationTitle</div>
+        </div>
+    </div>
+
+    <!-- Assigned Items Table -->
+    <div class="row mb-2 mt-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <h3 class="task-subtitle">Assigned Items</h3>
+        </div>
+    </div>
+
+    @if (VisibilitySettings.ShowHardwareDetails && !VisibilitySettings.ShowColumnsAsEditable)
+    {
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover hardware-table">
+                <thead class="table-dark text-center align-middle">
+                    <tr>
+                        <th class="sticky-header col-item">Item</th>
+                        <th class="col-qty">Quantity</th>
+                        <th class="col-dept">Department</th>
+                        <th class="col-date">Date Assigned</th>
+                        <th class="col-return">Return Status</th>
+                        <th class="col-model">Model</th>
+                        <th class="col-serial">Serial Number</th>
+                        <th class="col-remarks">Remarks</th>
+                        <th class="col-history">Remark History</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Hardwares.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center text-muted">No items assigned.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in Hardwares)
+                        {
+                            <tr class="align-middle text-center">
+                                <td class="sticky-column-mod">
+                                    <InputText class="form-control text-center" @bind-Value="@item.HardwareVM.ItemTitle" readonly />
+                                </td>
+                                <td><InputNumber class="form-control text-center" @bind-Value="@item.HardwareVM.Quantity" readonly /></td>
+                                <td><InputText class="form-control text-center" @bind-Value="@item.HardwareVM.DepartmentTitle" readonly /></td>
+                                <td><RadzenDatePicker @bind-Value="item.HardwareVM.DateAssigned" ReadOnly DateFormat="@ConstantHelper.DateFormat.DefaultDateFormat" ShowButton=false /></td>
+                                <td>
+                                    @if (item.HardwareVM.IsReturned)
+                                    {
+                                        <div class="badge bg-success w-100 p-3 return-status-badge">
+                                            Returned on<br />
+                                            <strong>@item.HardwareVM.DateReturned?.ToString(ConstantHelper.DateFormat.DefaultDateFormat)</strong>
+                                        </div>
+
+                                    }
+                                </td>
+                                <td><InputText class="form-control text-center" @bind-Value="item.HardwareVM.Model" readonly /></td>
+                                <td><InputText class="form-control text-center" @bind-Value="item.HardwareVM.SerialNumber" readonly /></td>
+                                <td><InputText class="form-control text-center" @bind-Value="item.HardwareVM.Remarks" readonly /></td>
+                                <td><InputText class="form-control text-center" @bind-Value="@item.HardwareVM.RemarkHistory" readonly /></td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else if (VisibilitySettings.ShowHardwareDetails && VisibilitySettings.ShowColumnsAsEditable)
+    {
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover hardware-table">
+                <thead class="table-dark text-center align-middle">
+                    <tr>
+                        <th class="sticky-header col-item">Item</th>
+                        <th class="col-qty">Quantity</th>
+                        <th class="col-dept">Department</th>
+                        <th class="col-date">Date Assigned</th>
+                        <th class="col-return">Return Status</th>
+                        <th class="col-model">Model</th>
+                        <th class="col-serial">Serial Number</th>
+                        <th class="col-remarks">Remarks</th>
+                        <th class="col-history">Remark History</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Hardwares.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center text-muted">No items assigned.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in Hardwares)
+                        {
+                            <tr class="align-middle text-center">
+                                <td class="sticky-column-mod">
+                                    <InputText class="form-control text-center"
+                                               @bind-Value="@item.HardwareVM.ItemTitle" readonly />
+                                </td>
+                                <td>
+                                    <InputNumber class="form-control text-center"
+                                                 @bind-Value="@item.HardwareVM.Quantity" readonly />
+                                </td>
+                                <td>
+                                    <InputText class="form-control text-center"
+                                               @bind-Value="@item.HardwareVM.DepartmentTitle" readonly />
+                                </td>
+                                <td>
+                                    <RadzenDatePicker @bind-Value="item.HardwareVM.DateAssigned" Disabled="@item.HardwareVM.IsReturned" DateFormat="@ConstantHelper.DateFormat.DefaultDateFormat" ShowButton=false />
+                                </td>
+
+                                <!-- Return Status Column -->
+                                <td>
+                                    @if (item.HardwareVM.IsReturned && !item.HardwareVM.IsInUndoMode)
+                                    {
+                                        <div class="alert alert-success text-center mb-2 p-2">
+                                            <div>Returned on</div>
+                                            <div>
+                                                <strong>@item.HardwareVM.DateReturned?.ToString(ConstantHelper.DateFormat.DefaultDateFormat)</strong>
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div>Date returned:</div>
+                                        <RadzenDatePicker class="mt-1" @bind-Value="item.HardwareVM.PendingDateReturned" DateFormat="@ConstantHelper.DateFormat.DefaultDateFormat" ShowButton=false />
+
+                                        <input type="hidden" value="@item.HardwareVM.PendingIsReturned" name="IsReturned" />
+                                    }
+                                </td>
+
+                                <td>
+                                    <InputText @bind-Value="item.HardwareVM.Model" class="form-control" disabled="@item.HardwareVM.IsReturned" />
+                                </td>
+                                <td>
+                                    <InputText @bind-Value="item.HardwareVM.SerialNumber" class="form-control" disabled="@item.HardwareVM.IsReturned" />
+                                </td>
+                                <td>
+                                    <InputText @bind-Value="item.HardwareVM.Remarks" class="form-control" disabled="@item.HardwareVM.IsReturned" />
+                                </td>
+                                <td>
+                                    <InputText class="form-control text-center"
+                                               @bind-Value="@item.HardwareVM.RemarkHistory" readonly />
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <table class="table table-bordered">
+            <thead class="table-dark text-center">
+                <tr>
+                    <th>Item</th>
+                    <th>Quantity</th>
+                    <th>Department</th>
+                    <th>Remarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Hardwares.Count == 0)
+                {
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">No items assigned.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var item in Hardwares)
+                    {
+                        var rowClass = item.HardwareVM.IsReturned ? "returned-item" : string.Empty;
+
+                        <tr class="align-middle @rowClass">
+                            <td>
+                                <InputText class="form-control text-center returned-input" @bind-Value="@item.HardwareVM.ItemTitle" readonly />
+                                @if (item.HardwareVM.IsReturned)
+                                {
+                                    <span class="badge bg-secondary ms-2">This item has been returned</span>
+                                }
+                            </td>
+                            <td>
+                                <InputNumber class="form-control text-center" @bind-Value="@item.HardwareVM.Quantity" readonly />
+                            </td>
+                            <td>
+                                <InputText class="form-control text-center" @bind-Value="@item.HardwareVM.DepartmentTitle" readonly />
+                            </td>
+                            <td>
+                                <InputText class="form-control text-center" @bind-Value="@item.HardwareVM.RemarkHistory" readonly />
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    }
+
+    @if (VisibilitySettings.ShowAcknowledgement)
+    {
+        <hr />
+
+        <div class="border rounded p-3 bg-light mt-3">
+            <h5 class="mb-3 acknowledgement-title">Hardware Return Confirmation</h5>
+
+            <div class="mb-3">
+                <label for="returnDateConfirm" class="form-label">Final Return Date of All Hardware:</label>
+                <RadzenDatePicker id="returnDateConfirm" @bind-Value="@EmployeeDetails.EmployeeDetailsVM.HardwareFinalReturnDate" DateFormat="@ConstantHelper.DateFormat.DefaultDateFormat" />
+            </div>
+
+            <div class="form-check">
+                <InputCheckbox class="form-check-input"
+                               id="returnConfirm"
+                               @bind-Value="@EmployeeDetails.EmployeeDetailsVM.HardwareReturnConfirmed" />
+                <label class="form-check-label" for="returnConfirm" style="font-weight: 100 !important">
+                    I confirm that all hardware assigned has been returned on the date specified above.
+                </label>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public RequestFormVisibilitySettings VisibilitySettings { get; set; }
+    [Parameter, EditorRequired]
+    public ViewModelEmployeeDetails EmployeeDetails { get; set; }
+    [Parameter, EditorRequired]
+    public List<ViewModelHardware> Hardwares { get; set; }
+    [Parameter, EditorRequired]
+    public ViewRequestItem Request { get; set; }
+    [Parameter]
+    public bool IsITDepartment { get; set; }
+
+    private static readonly HashSet<string> UpdateTypeRequests = new()
+    {
+        ConstantHelper.RequestForm.RequestType.ModificationRequestType,
+        ConstantHelper.RequestForm.RequestType.TransferRequestType,
+        ConstantHelper.RequestForm.RequestType.PromotionRequestType
+    };
+
+    protected override void OnParametersSet()
+    {
+        foreach (var hw in Hardwares)
+        {
+            hw.HardwareVM.PendingIsReturned = true;
+        }
+    }
+}

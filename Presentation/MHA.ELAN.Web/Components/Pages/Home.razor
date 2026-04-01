@@ -1,0 +1,40 @@
+﻿@page "/Home"
+@attribute [Authorize]
+@inject TempMessageService MessageService
+
+<PageTitle>Home</PageTitle>
+
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success">@successMessage</div>
+}
+
+<br />
+<MHA.ELAN.Web.Components.PartialComponents.MyPendingTask />
+<br />
+<MHA.ELAN.Web.Components.PartialComponents.MyActiveRequest />
+
+@code{
+    private string? successMessage;
+
+    protected override void OnInitialized()
+    {
+        if (!string.IsNullOrEmpty(MessageService.SuccessMessage))
+        {
+            successMessage = MessageService.SuccessMessage;
+            MessageService.SuccessMessage = null; 
+            StartTimer();
+        }
+    }
+
+    private Timer? timer;
+    private void StartTimer()
+    {
+        timer = new Timer(_ =>
+        {
+            successMessage = null;
+            InvokeAsync(StateHasChanged);
+            timer?.Dispose();
+        }, null, 10000, Timeout.Infinite);
+    }
+}

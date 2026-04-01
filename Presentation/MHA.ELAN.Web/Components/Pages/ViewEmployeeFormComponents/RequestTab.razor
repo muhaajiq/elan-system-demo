@@ -1,0 +1,47 @@
+﻿@inject NavigationHelper NavigationHelper
+
+<h3 class="task-title">Request :</h3>
+<div class="task-underline"></div>
+
+<div class="workflow-history-section">
+    <table class="table table-bordered">
+        <thead class="table-dark text-center">
+            <tr>
+                <th></th>
+                <th>Reference No</th>
+                <th>Request Type</th>
+                <th>Workflow Status</th>
+                <th>Created Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Request.Count == 0)
+            {
+                <tr>
+                    <td colspan="5" class="text-center text-muted">No request.</td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var item in Request)
+                {
+                    <tr class="align-middle">
+                        <td>@(Request.IndexOf(item) + 1)</td>
+                        @{
+                            string url = NavigationHelper.BuildUrl("/ViewRequestForm/EmployeeDetails", (ConstantHelper.ParameterQuery.RequestId, item.RequestID.ToString()));
+                        }
+                        <td><a href="@url">@(!string.IsNullOrWhiteSpace(item.ReferenceNo) ? item.ReferenceNo : "-")</a></td>
+                        <td>@item.RequestType</td>
+                        <td>@item.WorkflowStatus</td>
+                        <td>@item.CreatedDate</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public List<ViewRequestItem> Request { get; set; }
+}

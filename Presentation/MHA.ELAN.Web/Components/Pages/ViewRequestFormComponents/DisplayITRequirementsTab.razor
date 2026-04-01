@@ -1,0 +1,232 @@
+﻿@inject IOptions<JSONAppSettings> appSettings
+
+<h3 class="task-title">IT Requirements</h3>
+<div class="task-underline"></div>
+
+<div class="it-section">
+    <!-- Designation -->
+    <div class="row mb-3">
+        <div class="col-auto d-flex align-items-center mb-2">
+            <label class="form-label mb-0">Designation:</label>
+        </div>
+        <div class="col-md-4">
+            <div class="fw-bold">@EmployeeDetails.EmployeeDetailsVM.DesignationTitle</div>
+        </div>
+    </div>
+
+    <!-- Infra -->
+    @if (VisibilitySettings.ShowInfra)
+    {
+        <h3 class="task-subtitle mb-3">Infra</h3>
+        @if (ITRequirements == null || !ITRequirements.Any())
+        {
+            <div class="fst-italic text-muted">No infra selected.</div>
+        }
+        else
+        {
+            <table class="table table-bordered">
+                <thead class="table-dark text-center">
+                    <tr>
+                        <th>Item</th>
+                        <th>Added?</th>
+                        <th>Removed?</th>
+                        <th>Date Added</th>
+                        <th>Date Removed</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var option in ITRequirements.Where(x => x.ITRequirementsVM.Type == ConstantHelper.SPColumnValue.ITRequirements.ItemType.Infra))
+                    {
+                        <tr class="align-middle">
+                            <td style="width: 25%;">
+                                @option.ITRequirementsVM.ItemTitle
+                            </td>
+                            <td style="width: 5%;" class="text-center">
+                                <InputCheckbox class="form-check-input"
+                                               Value="option.ITRequirementsVM.IsAdded"
+                                               ValueExpression="() => option.ITRequirementsVM.IsAdded"
+                                               disabled="true" />
+                            </td>
+                            <td style="width: 5%;" class="text-center">
+                                <InputCheckbox class="form-check-input"
+                                               Value="option.ITRequirementsVM.IsRemoved"
+                                               ValueExpression="() => option.ITRequirementsVM.IsRemoved"
+                                               disabled="true" />
+                            </td>
+                            <td style="width: 12%;" class="text-center">
+                                @* <InputDate class="form-control form-control-sm text-center" @bind-Value="option.ITRequirementsVM.DateAdded" disabled="true" /> *@
+                                @if (option.ITRequirementsVM.DateAdded != null && option.ITRequirementsVM.DateAdded != DateTime.MinValue)
+                                {
+                                    <span>@option.ITRequirementsVM.DateAdded.Value.ToString(appSettings.Value.DefaultDateFormat)</span>
+                                }
+                            </td>
+                            <td style="width: 12%;" class="text-center">
+                                @* <InputDate class="form-control form-control-sm text-center" @bind-Value="option.ITRequirementsVM.DateRemoved" disabled="true" /> *@
+                                @if (option.ITRequirementsVM.DateRemoved != null && option.ITRequirementsVM.DateRemoved != DateTime.MinValue)
+                                {
+                                    <span>@option.ITRequirementsVM.DateRemoved.Value.ToString(appSettings.Value.DefaultDateFormat)</span>
+                                }
+                            </td>
+                            <td style="width: 41%;">
+                                @* <InputText class="form-control form-control-sm" @bind-Value="option.ITRequirementsVM.Remark" placeholder="Enter Remark here" disabled="true" /> *@
+                                @option.ITRequirementsVM.Remark
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    }
+
+    <!-- Applications -->
+    @if (VisibilitySettings.ShowApplications)
+    {
+        <h3 class="task-subtitle mt-3 mb-3">Applications</h3>
+        @if (ITRequirements == null || !ITRequirements.Any())
+        {
+            <div class="fst-italic text-muted">No applications selected.</div>
+        }
+        else
+        {
+            <table class="table table-bordered">
+                <thead class="table-dark text-center">
+                    <tr>
+                        <th>Item</th>
+                        <th>Added?</th>
+                        <th>Removed?</th>
+                        <th>Date Added</th>
+                        <th>Date Removed</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var option in ITRequirements.Where(x => x.ITRequirementsVM.Type == ConstantHelper.SPColumnValue.ITRequirements.ItemType.Applications))
+                    {
+                        <tr class="align-middle">
+                            <td style="width: 25%;">
+                                @option.ITRequirementsVM.ItemTitle
+                            </td>
+                            <td style="width: 5%;" class="text-center">
+                                <InputCheckbox class="form-check-input"
+                                               Value="option.ITRequirementsVM.IsAdded"
+                                               ValueExpression="() => option.ITRequirementsVM.IsAdded"
+                                               disabled="true" />
+                            </td>
+                            <td style="width: 5%;" class="text-center">
+                                <InputCheckbox class="form-check-input"
+                                               Value="option.ITRequirementsVM.IsRemoved"
+                                               ValueExpression="() => option.ITRequirementsVM.IsRemoved"
+                                               disabled="true" />
+                            </td>
+                            <td style="width: 12%;" class="text-center">
+                                @if (option.ITRequirementsVM.DateAdded != null && option.ITRequirementsVM.DateAdded != DateTime.MinValue)
+                                {
+                                    <span>@option.ITRequirementsVM.DateAdded.Value.ToString(appSettings.Value.DefaultDateFormat)</span>
+                                }
+                            </td>
+                            <td style="width: 12%;" class="text-center">
+                                @if (option.ITRequirementsVM.DateRemoved != null && option.ITRequirementsVM.DateRemoved != DateTime.MinValue)
+                                {
+                                    <span>@option.ITRequirementsVM.DateRemoved.Value.ToString(appSettings.Value.DefaultDateFormat)</span>
+                                }
+                            </td>
+                            <td style="width: 41%;">
+                                @option.ITRequirementsVM.Remark
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    }
+
+    <!-- Folder Permissions -->
+    @if (VisibilitySettings.ShowFolderPermission)
+    {
+        <h3 class="task-subtitle mt-4">Folder Permissions</h3>
+        @if (FolderPermissions == null || !FolderPermissions.Any())
+        {
+            <div class="text-muted fst-italic">No folders added.</div>
+        }
+        else
+        {
+            <table class="table table-bordered">
+                <thead class="table-dark text-center">
+                    <tr>
+                        <th>Folder Name / Path</th>
+                        <th>Read</th>
+                        <th>Write</th>
+                        <th>Delete</th>
+                        <th>Status</th>
+                        <th>Added?</th>
+                        <th>Removed?</th>
+                        <th>Date Added</th>
+                        <th>Date Removed</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var folder in FolderPermissions)
+                    {
+                        <tr class="align-middle">
+                            <td>
+                                @folder.NameOrPath
+                            </td>
+                            <td class="text-center">
+                                <i class="bi @(folder.IsRead ? "bi-check-circle text-success" : "bi-x-circle text-danger")"></i>
+                            </td>
+                            <td class="text-center">
+                                <i class="bi @(folder.IsWrite ? "bi-check-circle text-success" : "bi-x-circle text-danger")"></i>
+                            </td>
+                            <td class="text-center">
+                                <i class="bi @(folder.IsDelete ? "bi-check-circle text-success" : "bi-x-circle text-danger")"></i>
+                            </td>
+                            <td>
+                                @folder.Status
+                            </td>
+                            <td style="width: 5%;" class="text-center">
+                                <InputCheckbox class="form-check-input"
+                                               Value="folder.IsAdded"
+                                               ValueExpression="() => folder.IsAdded"
+                                               disabled="true" />
+                            </td>
+                            <td style="width: 5%;" class="text-center">
+                                <InputCheckbox class="form-check-input"
+                                               Value="folder.IsRemoved"
+                                               ValueExpression="() => folder.IsRemoved"
+                                               disabled="true" />
+                            </td>
+                            <td class="text-center">
+                                @if (folder.DateAdded != null && folder.DateAdded != DateTime.MinValue)
+                                {
+                                    <span>@folder.DateAdded.Value.ToString(appSettings.Value.DefaultDateFormat)</span>
+                                }
+                            </td>
+                            <td class="text-center" width="200px">
+                                @if (folder.DateRemoved != null && folder.DateRemoved != DateTime.MinValue)
+                                {
+                                    <span>@folder.DateRemoved.Value.ToString(appSettings.Value.DefaultDateFormat)</span>
+                                }
+                            </td>
+                            <td>
+                                @folder.Remark
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public RequestFormVisibilitySettings VisibilitySettings { get; set; }
+    [Parameter, EditorRequired]
+    public ViewModelEmployeeDetails EmployeeDetails { get; set; }
+    [Parameter, EditorRequired]
+    public List<ViewModelITRequirements> ITRequirements { get; set; }
+    [Parameter, EditorRequired]
+    public List<ViewModelFolderPermission> FolderPermissions { get; set; }
+}

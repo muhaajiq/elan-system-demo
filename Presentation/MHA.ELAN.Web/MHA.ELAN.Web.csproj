@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ElmahCore" Version="2.1.2" />
+    <PackageReference Include="ElmahCore.Sql" Version="2.1.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.6" />
+    <PackageReference Include="PnP.Core" Version="1.15.0" />
+    <PackageReference Include="PnP.Core.Auth" Version="1.15.0" />
+    <PackageReference Include="PnP.Framework" Version="1.18.0" />
+    <PackageReference Include="Radzen.Blazor" Version="7.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Business\MHA.ELAN.Business\MHA.ELAN.Business.csproj" />
+    <ProjectReference Include="..\..\Data\MHA.ELAN.Data\MHA.ELAN.Data.csproj" />
+    <ProjectReference Include="..\..\Shared\MHA.ELAN.Entities\MHA.ELAN.Entities.csproj" />
+    <ProjectReference Include="..\..\Shared\MHA.ELAN.Framework\MHA.ELAN.Framework.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\Certs\" />
+    <Folder Include="wwwroot\images\" />
+  </ItemGroup>
+
+</Project>

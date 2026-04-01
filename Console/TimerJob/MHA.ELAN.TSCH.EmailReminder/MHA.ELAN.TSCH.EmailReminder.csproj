@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Business\MHA.ELAN.Business\MHA.ELAN.Business.csproj" />
+    <ProjectReference Include="..\..\..\Data\MHA.ELAN.Data\MHA.ELAN.Data.csproj" />
+    <ProjectReference Include="..\..\..\Shared\MHA.ELAN.Entities\MHA.ELAN.Entities.csproj" />
+    <ProjectReference Include="..\..\..\Shared\MHA.ELAN.Framework\MHA.ELAN.Framework.csproj" />
+  </ItemGroup>
+
+	<ItemGroup>
+		<None Update="appsettings.json">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+</Project>

@@ -1,0 +1,259 @@
+﻿@page "/EmployeeListing"
+@attribute [Authorize]
+@inject SearchBL searchBL
+@inject TokenHelper TokenHelper
+@inject LogHelper LogHelper
+@inject ProjectHelper ProjectHelper
+@inject NavigationHelper NavigationHelper
+@inject IJSRuntime JS
+@inject IOptions<JSONAppSettings> appSettings
+
+<PageTitle>eLAN Employee Listing</PageTitle>
+
+<h3>eLAN Employee Listing</h3>
+
+<RadzenTemplateForm TItem="EmployeeListingSearchModel" Data="@vm.searchModel" Submit="@SearchAsync">
+    <div class="row mb-3">
+        <div class="col-md-6 d-flex align-items-center">
+            <RadzenLabel Text="Employee Name" Component="employeeName" Style="width: 30%" />
+            <RadzenTextBox @bind-Value="vm.searchModel.EmployeeName" Name="employeeName" Placeholder="Employee Name" Style="width:70%" />
+        </div>
+        <div class="col-md-6 d-flex align-items-center">
+            <RadzenLabel Text="Employee ID" Component="employeeID" Style="width: 30%" />
+            <RadzenTextBox @bind-Value="vm.searchModel.EmployeeId" Name="employeeID" Placeholder="Employee ID" Style="width:70%" />
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-6 d-flex align-items-center">
+            <RadzenLabel Text="Designation" Component="designation" Style="width: 30%" />
+            <RadzenDropDown @bind-Value="vm.searchModel.Designation" Name="designation" Placeholder="--Select designation(s)--" Data="@designations" TextProperty="@nameof(DropDownListItem.Text)" ValueProperty="@nameof(DropDownListItem.Value)" Style="width:70%" Multiple="true" />
+        </div>
+        <div class="col-md-6 d-flex align-items-center">
+            <RadzenLabel Text="Grade" Component="grade" Style="width: 30%" />
+            <RadzenDropDown @bind-Value="vm.searchModel.Grade" Name="grade" Placeholder="--Select grade(s)--" Data="@grades" TextProperty="@nameof(DropDownListItem.Text)" ValueProperty="@nameof(DropDownListItem.Value)" Style="width:70%" Multiple="true" />
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-6 d-flex align-items-center">
+            <RadzenLabel Text="Department" Component="department" Style="width: 30%" />
+            <RadzenDropDown @bind-Value="vm.searchModel.Department" Name="department" Placeholder="--Select department(s)--" Data="@departments" TextProperty="@nameof(DropDownListItem.Text)" ValueProperty="@nameof(DropDownListItem.Value)" Style="width:70%" Multiple="true" />
+        </div>
+        <div class="col-md-6 d-flex align-items-center">
+            <RadzenLabel Text="Reporting Manager" Component="reportingManager" Style="width: 30%" />
+            <RadzenTextBox @bind-Value="vm.searchModel.ReportingManager" Name="reportingManager" Placeholder="Reporting Manager" Style="width:70%" />
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-6 d-flex align-items-center">
+            <RadzenLabel Text="Location" Component="location" Style="width: 30%" />
+            <RadzenDropDown @bind-Value="vm.searchModel.Location" Name="location" Placeholder="--Select location(s)--" Data="@locations" TextProperty="@nameof(DropDownListItem.Text)" ValueProperty="@nameof(DropDownListItem.Value)" Style="width:70%" Multiple="true" />
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-6 d-flex align-items-center">
+            <RadzenLabel Text="Joined Start Date" Component="joinedStartDate" Style="width: 30%" />
+            <RadzenDatePicker @bind-Value="vm.searchModel.JoinedStartDate" Name="joinedStartDate" Placeholder="@appSettings.Value.DefaultDateFormat" ShowTime="false" Style="width:70%" DateFormat="@appSettings.Value.DefaultDateFormat" />
+        </div>
+        <div class="col-md-6 d-flex align-items-center">
+            <RadzenLabel Text="Joined End Date" Component="joinedEndDate" Style="width: 30%" />
+            <RadzenDatePicker @bind-Value="vm.searchModel.JoinedEndDate" Name="joinedEndDate" Placeholder="@appSettings.Value.DefaultDateFormat" ShowTime="false" Style="width:70%" DateFormat="@appSettings.Value.DefaultDateFormat" />
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-12 d-flex align-items-center justify-content-end">
+            <RadzenCustomValidator Component="joinedEndDate" Validator="@(() => ValidateDates(vm.searchModel.JoinedStartDate, vm.searchModel.JoinedEndDate))" Text="Joined End Date must be after Joined Start Date!" />
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-6 d-flex align-items-center">
+            <RadzenLabel Text="Contract/Permanent" Component="contractOrPermanent" Style="width: 30%" />
+            <RadzenDropDown @bind-Value="vm.searchModel.ContractOrPermanent" Name="contractOrPermanent" Placeholder="--Select--" Data="@contractOrPermanent" Style="width:70%" Multiple="true" />
+        </div>
+        <div class="col-md-6 d-flex align-items-center">
+            <RadzenLabel Text="Employee Status" Component="employeeStatus" Style="width: 30%" />
+            <RadzenDropDown @bind-Value="vm.searchModel.EmployeeStatus" Name="employeeStatus" Placeholder="--Select--" Data="@employeeStatus" Style="width:70%" Multiple="true" />
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-12 d-flex align-items-center justify-content-end">
+            <RadzenLabel Text="Show Inactive List Items" Component="showInactiveItems" />
+            <RadzenCheckBox @bind-Value="vm.ShowInactiveItems" Name="showInactiveItems" TValue="bool" Change="LoadMaintenanceListItems" />
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-12 d-flex justify-content-end">
+            <RadzenButton Text="Search" ButtonStyle="ButtonStyle.Primary" Icon="search" Type="Submit" Style="margin-right: 10px" />
+            <RadzenButton Text="Clear" ButtonStyle="ButtonStyle.Light" Click="@ClearFilters" Icon="refresh" />
+        </div>
+    </div>
+</RadzenTemplateForm>
+
+
+<div class="row">
+    <div class="col-md-6">
+        <p>Search Results</p>
+    </div>
+    <div class="col-md-6 d-flex justify-content-end">
+        <b>Total Search Results: @vm.Count</b>
+    </div>
+</div>
+
+<RadzenDataGrid @ref="grid"
+                TItem="EmployeeListingData"
+                LoadData="@LoadEmployeeListing"
+                AllowPaging="true"
+                AllowSorting="true"
+                AllowFiltering="false"
+                ShowPagingSummary="true"
+                PageSize="pageSelectionLimit"
+                EmptyText="No data available"
+                ColumnWidth="@ConstantHelper.TableColumnWidth.General">
+    <Columns>
+        <RadzenDataGridColumn TItem="EmployeeListingData" Title="No." Width="50px" Sortable="false" Frozen="true" WhiteSpace="WhiteSpace.Wrap">
+            <Template Context="emp">@(vm.EmployeeListing.IndexOf(emp) + 1)</Template>
+        </RadzenDataGridColumn>
+
+        <RadzenDataGridColumn TItem="EmployeeListingData" Property="EmployeeName" Title="Employee Name" Frozen="true" WhiteSpace="WhiteSpace.Wrap">
+            <Template Context="data">
+                @if (!string.IsNullOrWhiteSpace(data.EmployeeName))
+                {
+                    <a href="@NavigationHelper.BuildUrl($"/ViewEmployeeForm/EmployeeDetails", (ConstantHelper.ParameterQuery.EmployeeId, data.ID.ToString()))">@data.EmployeeName</a>
+                }
+                else
+                {
+                    <a href="@NavigationHelper.BuildUrl($"/ViewEmployeeForm/EmployeeDetails", (ConstantHelper.ParameterQuery.EmployeeId, data.ID.ToString()))">-</a>
+                }
+            </Template>
+        </RadzenDataGridColumn>
+
+        <RadzenDataGridColumn TItem="EmployeeListingData" Property="EmployeeID" Title="Employee ID" Frozen="true" WhiteSpace="WhiteSpace.Wrap" />
+        <RadzenDataGridColumn TItem="EmployeeListingData" Property="EmployeeStatus" Title="Status" WhiteSpace="WhiteSpace.Wrap" />
+        <RadzenDataGridColumn TItem="EmployeeListingData" Property="Designation" Title="Designation" WhiteSpace="WhiteSpace.Wrap" />
+        <RadzenDataGridColumn TItem="EmployeeListingData" Property="Grade" Title="Grade" WhiteSpace="WhiteSpace.Wrap" />
+        <RadzenDataGridColumn TItem="EmployeeListingData" Property="Department" Title="Department" WhiteSpace="WhiteSpace.Wrap" />
+        <RadzenDataGridColumn TItem="EmployeeListingData" Property="ReportingManager" Title="Reporting Manager" WhiteSpace="WhiteSpace.Wrap" />
+        <RadzenDataGridColumn TItem="EmployeeListingData" Property="Location" Title="Location" WhiteSpace="WhiteSpace.Wrap" />
+
+        <RadzenDataGridColumn TItem="EmployeeListingData" Property="JoinedDate" Title="Joined Date" WhiteSpace="WhiteSpace.Wrap">
+            <Template Context="data">@FormatDate(data.JoinedDate)</Template>
+        </RadzenDataGridColumn>
+
+        <RadzenDataGridColumn TItem="EmployeeListingData" Property="ContractOrPermanent" Title="Contract/Permanent" WhiteSpace="WhiteSpace.Wrap" />
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    [SupplyParameterFromQuery(Name = ConstantHelper.ParameterQuery.SPHostUrl)]
+    [Parameter]
+    public string spHostUrl { get; set; }
+    public string accessToken = string.Empty;
+
+    private RadzenDataGrid<EmployeeListingData> grid;
+    public ViewModelEmployeeListing vm = new();
+
+    List<DropDownListItem> departments = new();
+    List<DropDownListItem> designations = new();
+    List<DropDownListItem> grades = new();
+    List<DropDownListItem> locations = new();
+
+    List<string> contractOrPermanent = new();
+
+    List<string> employeeStatus = new();
+
+    private int pageSelectionLimit;
+
+    protected override async Task OnInitializedAsync()
+    {
+        accessToken = await TokenHelper.GetUserAccessToken();
+        pageSelectionLimit = int.Parse(JSONAppSettings.SearchPagingShowLimit);
+
+        // await LoadMaintenanceListItems();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadMaintenanceListItems();
+        }
+    }
+
+    private async Task LoadMaintenanceListItems()
+    {
+        await JS.InvokeVoidAsync("showSwalGeneralLoading", "Loading List Items", "Please wait while we are loading list items...");
+
+        bool showInactive = vm.ShowInactiveItems;
+
+        //TODO: Add logic to handle exception
+        contractOrPermanent = ProjectHelper.GetContractOrPermanent();
+        employeeStatus = ProjectHelper.GetEmployeeStatus();
+        departments = ProjectHelper.LoadDropDownListItem(ConstantHelper.SPList.Department, showInactive, spHostUrl, accessToken);
+        designations = ProjectHelper.LoadDropDownListItem(ConstantHelper.SPList.Designation, showInactive, spHostUrl, accessToken);
+        grades = ProjectHelper.LoadDropDownListItem(ConstantHelper.SPList.Grade, showInactive, spHostUrl, accessToken);
+        locations = ProjectHelper.LoadDropDownListItem(ConstantHelper.SPList.Location, showInactive, spHostUrl, accessToken);
+
+        await JS.InvokeVoidAsync("Swal.close");
+    }
+
+    private async Task LoadEmployeeListing(LoadDataArgs args)
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("showSwalGeneralLoading", "Searching Employee", "Please wait while we are loading employees...");
+
+            int pageSize = args.Top ?? pageSelectionLimit;
+            int skip = args.Skip ?? 0;
+            var currentPage = (skip / pageSize) + 1;
+
+            vm.PageNumber = currentPage;
+            vm.RowsPerPage = pageSelectionLimit;
+            vm.SortField = args.Sorts?.FirstOrDefault()?.Property;
+            vm.SortDirection = args.Sorts?.FirstOrDefault()?.SortOrder.Value.ToString();
+
+            vm = await searchBL.SearchEmployeeListing(vm, spHostUrl, accessToken);
+
+            grid.Data = vm.EmployeeListing;
+            grid.Count = vm.Count;
+
+            await JS.InvokeVoidAsync("Swal.close");
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("Swal.close");
+
+            await JS.InvokeVoidAsync("showSwalError", "Failed to load employee listing. ");
+
+            LogHelper.LogMessage("EmployeeBL - SearchEmployeeListing Error: " + ex.ToString());
+        }
+    }
+
+    private async Task SearchAsync(EmployeeListingSearchModel model)
+    {
+        vm.searchModel = model;
+
+        await grid.Reload();
+    }
+
+
+    private async Task ClearFilters()
+    {
+        vm.searchModel = new EmployeeListingSearchModel();
+
+        await grid.Reload();
+    }
+
+    string FormatDate(DateTime? date)
+    {
+        return (date == null || date == DateTime.MinValue)
+            ? "-"
+            : date.Value.ToString(appSettings.Value.DefaultDateFormat);
+    }
+
+    private bool ValidateDates(DateTime? start, DateTime? end)
+    {
+        if (start.HasValue && end.HasValue && end < start) return false;
+
+        return true;
+    }
+
+}

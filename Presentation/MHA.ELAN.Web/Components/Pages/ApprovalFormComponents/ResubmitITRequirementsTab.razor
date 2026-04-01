@@ -1,0 +1,272 @@
+﻿@inject NavigationManager Navigation
+@inject RequestBL RequestBL
+@inject TokenHelper TokenHelper
+@inject TempMessageService MessageService
+
+<h3 class="task-title">IT Requirements</h3>
+<div class="task-underline"></div>
+
+@if (ITRequirementsVM.RequestModelHasError && !string.IsNullOrEmpty(ITRequirementsVM.RequestModelErrorMessage))
+{
+    <div class="alert alert-danger" role="alert">
+        @((MarkupString)ITRequirementsVM.RequestModelErrorMessage)
+    </div>
+}
+else
+{
+    @if (ITRequirementsVM.HasError && !string.IsNullOrEmpty(ITRequirementsVM.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            @((MarkupString)ITRequirementsVM.ErrorMessage)
+        </div>
+    }
+
+    <div class="it-section">
+        <!-- Designation -->
+        <div class="row mb-3" style="font-size: 17px;">
+            <div class="col-auto d-flex align-items-center mb-2">
+                <label class="form-label mb-0">Designation:</label>
+            </div>
+            <div class="col-md-4">
+                @if (string.IsNullOrWhiteSpace(ITRequirementsVM.Designation))
+                {
+                    <div class="text-danger">Please select a Designation in Employee Details.</div>
+                }
+                else
+                {
+                    <div class="fw-bold">@ITRequirementsVM.Designation</div>
+                }
+            </div>
+        </div>
+
+        <!-- Infra -->
+        <h3 class="task-subtitle mb-3">Infra</h3>
+
+        @if (!FilteredInfraOptions.Any())
+        {
+            <div class="fst-italic text-muted">-- Not Available --</div>
+        }
+        else
+        {
+            <div class="card border-0 shadow-sm mb-4 p-3 bg-white">
+                @for (int i = 0; i < FilteredInfraOptions.Count; i++)
+                {
+                    var option = FilteredInfraOptions[i];
+
+                    <div class="form-check d-flex align-items-center border-bottom py-2">
+                        <InputCheckbox class="form-check-input me-2" @bind-Value="option.IsSelected" />
+                        <label class="form-check-label fs-6 fw-normal">@option.Name</label>
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- Applications -->
+        <h3 class="task-subtitle mt-3 mb-3">Applications</h3>
+
+        @if (!FilteredApplicationOptions.Any())
+        {
+            <div class="fst-italic text-muted">-- Not Available --</div>
+        }
+        else
+        {
+            <div class="card border-0 shadow-sm mb-4 p-3 bg-white">
+                @for (int i = 0; i < FilteredApplicationOptions.Count; i++)
+                {
+                    var option = FilteredApplicationOptions[i];
+
+                    <div class="form-check d-flex align-items-center border-bottom py-2">
+                        <InputCheckbox class="form-check-input me-2" @bind-Value="option.IsSelected" />
+                        <label class="form-check-label fs-6 fw-normal">@option.Name</label>
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- Folder Permissions -->
+        <div class="row mb-2 mt-4">
+            <div class="col-12 d-flex justify-content-between align-items-center">
+                <h3 class="task-subtitle">Folder Permissions</h3>
+                <button type="button" class="btn btn-primary" @onclick="AddFolder">
+                    + Add
+                </button>
+            </div>
+        </div>
+        @if (ITRequirementsVM.FolderPermissions != null)
+        {
+            <table class="table table-bordered">
+                <thead class="table-dark text-center">
+                    <tr>
+                        <th>Folder Name / Path</th>
+                        <th>Read</th>
+                        <th>Write</th>
+                        <th>Delete</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (ITRequirementsVM.FolderPermissions.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">No folders added. Click + Add to add folders.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var entry in ITRequirementsVM.FolderPermissions.Select((item, idx) => new { item, idx }).Where(x => !x.item.IsTempRemoved))
+                        {
+                            var folder = entry.item;
+                            var i = entry.idx;
+
+                            <tr>
+                                <td>
+                                    <InputText class="form-control"
+                                               @bind-Value="folder.NameOrPath"
+                                               placeholder="Enter folder path" />
+                                    <ValidationMessage For="@(() => folder.NameOrPath)" />
+                                </td>
+                                <td class="text-center">
+                                    <InputCheckbox class="form-check-input"
+                                                   @bind-Value="folder.IsRead" disabled />
+                                </td>
+                                <td class="text-center">
+                                    <InputCheckbox @bind-Value="folder.IsWrite" />
+                                </td>
+                                <td class="text-center">
+                                    <InputCheckbox @bind-Value="folder.IsDelete" />
+                                </td>
+                                <td class="text-center">@folder.Status</td>
+                                <td class="text-center">
+                                    <button class="btn btn-danger btn-sm" @onclick="() => RemoveFolder(i)">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public ViewModelITRequirements ITRequirementsVM { get; set; }
+
+    [Parameter] public string DesignationFromEmployeeDetails { get; set; }
+    [Parameter] public int? DesignationIDFromEmployeeDetails { get; set; }
+
+    private List<ITOption> FilteredInfraOptions { get; set; } = new();
+    private List<ITOption> FilteredApplicationOptions { get; set; } = new();
+
+    protected override void OnParametersSet()
+    {
+        SetDesignationFromParent();
+        FilterOptionsByDesignation();
+        SyncSelectionsToViewModel();
+    }
+
+    private void AddFolder()
+    {
+        try
+        {
+            ITRequirementsVM.FolderPermissions.Add(new FolderPermission
+            {
+                IsRead = true,
+                Status = "New",
+                IsTempRemoved = false
+            });
+            Console.WriteLine($"Added folder, total count: {ITRequirementsVM.FolderPermissions.Count}");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error during AddFolder: {ex}");
+        }
+    }
+
+    private void RemoveFolder(int index)
+    {
+        if (index >= 0 && index < ITRequirementsVM.FolderPermissions.Count)
+        {
+            var folder = ITRequirementsVM.FolderPermissions[index];
+            folder.IsTempRemoved = true;
+            folder.TempStatus = "Removed";
+        }
+    }
+
+    private void SetDesignationFromParent()
+    {
+        ITRequirementsVM.Designation ??= DesignationFromEmployeeDetails;
+
+        if (DesignationIDFromEmployeeDetails > 0)
+        {
+            ITRequirementsVM.DesignationID = DesignationIDFromEmployeeDetails.Value;
+        }
+        else
+        {
+            ITRequirementsVM.DesignationID = 0;
+        }
+    }
+
+    private void FilterOptionsByDesignation()
+    {
+        if (ITRequirementsVM.DesignationID > 0)
+        {
+            int designationId = ITRequirementsVM.DesignationID;
+
+            FilteredInfraOptions = ITRequirementsVM.InfraOptions
+                .Where(opt => opt.DesignationID is null || opt.DesignationID == designationId)
+                .ToList();
+
+            FilteredApplicationOptions = ITRequirementsVM.ApplicationOptions
+                .Where(opt => opt.DesignationID is null || opt.DesignationID == designationId)
+                .ToList();
+        }
+        else
+        {
+            FilteredInfraOptions.Clear();
+            FilteredApplicationOptions.Clear();
+        }
+    }
+
+    public void SyncSelectionsToViewModel()
+    {
+        ITRequirementsVM.SelectedITRequirements.Clear();
+
+        var now = DateTime.Now;
+
+        // Infra selections
+        var selectedInfra = FilteredInfraOptions
+            .Where(opt => opt.IsSelected)
+            .Select(opt => new ITRequirements
+            {
+                ItemID = opt.ItemID,
+                ItemTitle = opt.Name,
+                Type = ConstantHelper.RequestForm.ITRequirementsType.Infra,
+                Created = now,
+                CreatedBy = "",
+                CreatedByLogin = ""
+            });
+
+        // Application selections
+        var selectedApps = FilteredApplicationOptions
+            .Where(opt => opt.IsSelected)
+            .Select(opt => new ITRequirements
+            {
+                ItemID = opt.ItemID,
+                ItemTitle = opt.Name,
+                Type = ConstantHelper.RequestForm.ITRequirementsType.Applications,
+                Created = now,
+                CreatedBy = "",
+                CreatedByLogin = ""
+            });
+
+        ITRequirementsVM.SelectedITRequirements.AddRange(selectedInfra);
+        ITRequirementsVM.SelectedITRequirements.AddRange(selectedApps);
+    }
+
+}

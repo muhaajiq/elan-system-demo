@@ -1,0 +1,45 @@
+﻿<h3 class="task-title">Changelog :</h3>
+<div class="task-underline"></div>
+
+<div class="workflow-history-section">
+    <table class="table table-bordered">
+        <thead class="table-dark text-center">
+            <tr>
+                <th width="5%">No.</th>
+                <th width="95%">Changes</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (ChangesModel.Count == 0)
+            {
+                <tr>
+                    <td colspan="2" class="text-center text-muted">No changelog.</td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var item in ChangesModel)
+                {
+                    if (item.Changes == ConstantHelper.SQLTableColumnValue.Request.Changes.NoChanges)
+                    {
+                        <tr class="align-middle">
+                            <td colspan="2" class="text-center text-muted">@item.Changes</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        <tr class="align-middle">
+                            <td> @(ChangesModel.IndexOf(item) + 1)</td>
+                            <td>@item.Changes</td>
+                        </tr>
+                    }
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public List<ViewChangesItem> ChangesModel { get; set; }
+}

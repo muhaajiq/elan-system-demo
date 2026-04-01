@@ -1,0 +1,176 @@
+﻿@page "/Delegation"
+@attribute [Authorize]
+@inject IJSRuntime JS
+@inject WorkflowBL workflowBL
+@inject NavigationManager Navigation
+@inject NavigationHelper NavigationHelper
+@inject TokenHelper TokenHelper
+@inject LogHelper LogHelper
+
+<PageTitle>Delegation(s)</PageTitle>
+
+<h2>Delegation(s)</h2>
+
+<div id="divDelegate">
+    <table class="table table-bordered">
+        <thead class="table-dark text-center">
+            <tr>
+                <th>Process Name</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (model.HasItem)
+            {
+                foreach (var item in model.DelegationList)
+                {
+                    <tr>
+                        <td>
+                            @item.ProcessName
+                        </td>
+                        <td>
+                            @item.DelegationFromFriendlyName
+                        </td>
+                        <td>
+                            @item.DelegationToFriendlyName
+                        </td>
+                        <td>
+                            @item.DelegationStartDate.ToString(model.DateFormat)
+                        </td>
+                        <td>
+                            @item.DelegationEndDate.ToString(model.DateFormat)
+                        </td>
+                        <td>
+                            @if (item.IsAbleToRemove)
+                            {
+                                @* <RemoveDelegate SpHostUrl="@spHostUrl"
+                                                Item="@item"/> *@
+                                <a href="javascript:void(0);" @onclick="() => openRemoveModel(item.DelegationID)">Remove</a>
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+    @if (!model.HasItem)
+    {
+        <label>You do not have any delegations.</label>
+    }
+</div>
+
+<div class="modal fade" id="removeModal" tabindex="-1" role="dialog" aria-labelledby="Remove Delegate" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-body">
+                <div class="text-left" style="text-align: justify;">
+                    Are you sure you want to remove / delete this delegation task? Once removed, the delegatee will no longer be able to view the delegated task.
+                </div>
+            </div>
+            <!-- Buttons -->
+            <div class="d-flex justify-content-end gap-2 mt-3 mb-3">
+                <button type="button" class="btn btn-success" @onclick="() => removeDelegate(SelectedID)">Confirm</button>
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<a href="@model.NewDelegationURL" target="_parent">New Delegation</a>
+
+@code {
+    [SupplyParameterFromQuery(Name = ConstantHelper.ParameterQuery.SPHostUrl)]
+    [Parameter]
+    public string spHostUrl { get; set; }
+    public string accessToken = string.Empty;
+
+    public ViewModelMyDelegate model = new();
+    public int SelectedID { get; set; }
+
+    //InitMyDelegate
+    protected override async Task OnInitializedAsync()
+    {
+        accessToken = await TokenHelper.GetUserAccessToken();
+        // await LoadData();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadData();
+
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("showSwalGeneralLoading", "Loading Delegation", "Please wait while we load your delegation...");
+
+            model = await workflowBL.InitMyDelegate(spHostUrl, accessToken);
+
+            await JS.InvokeVoidAsync("Swal.close");
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("Swal.close");
+
+            LogHelper.LogMessage("Delegation - Error: " + ex.ToString());
+
+            await JS.InvokeVoidAsync("showSwalError", "Failed to load data. Please try again later.");
+        }
+    }
+
+    private async Task removeDelegate(int delegationID)
+    {
+        try
+        {
+            User curUser = SharePointHelper.GetCurrentUser(spHostUrl, accessToken);
+            workflowBL.DeleteDelegation(delegationID, curUser.LoginName);
+
+            await closeRemoveModel();
+
+            await ShowSucessMessage();
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            LogHelper.LogMessage("RemoveDelegate - removeDelegate Error: " + ex.ToString());
+        }
+    }
+
+    private async Task ShowSucessMessage()
+    {
+        await JS.InvokeVoidAsync("Swal.fire", new
+        {
+            title = "Success",
+            text = $"You have successfully remove the delegatee!",
+            icon = "success",
+            confirmButtonText = "OK",
+            customClass = new
+            {
+                title = "swal-title-custom",
+                text = "swal-text-custom"
+            }
+        });
+    }
+
+    private async Task openRemoveModel(int delegationID)
+    {
+        SelectedID = delegationID;
+        await JS.InvokeVoidAsync("jsInterop.showModal", "#removeModal");
+    }
+
+    private async Task closeRemoveModel()
+    {
+        await JS.InvokeVoidAsync("jsInterop.hideModal", "#removeModal");
+    }
+}

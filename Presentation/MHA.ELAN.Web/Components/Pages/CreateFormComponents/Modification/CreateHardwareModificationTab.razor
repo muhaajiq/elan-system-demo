@@ -1,0 +1,451 @@
+﻿@inject TokenHelper TokenHelper
+@inject RequestBL RequestBL
+
+<h3 class="task-title">Hardware</h3>
+<div class="task-underline"></div>
+
+@if (HardwareVM.RequestModelHasError && !string.IsNullOrEmpty(HardwareVM.RequestModelErrorMessage))
+{
+    <div class="alert alert-danger" role="alert">
+        @((MarkupString)HardwareVM.RequestModelErrorMessage)
+    </div>
+}
+else
+{
+    @if (HardwareVM.HasError && !string.IsNullOrEmpty(HardwareVM.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @((MarkupString)HardwareVM.ErrorMessage)
+            <button type="button" class="btn-close" aria-label="Close" @onclick="DismissErrorAlert"></button>
+        </div>
+    }
+
+    <div class="hardware-section">
+        <!-- Designation -->
+        <div class="row mb-3">
+            <div class="col-auto d-flex align-items-center mb-2">
+                <label class="form-label mb-0">Designation:</label>
+            </div>
+            <div class="col-md-4">
+                @if (string.IsNullOrWhiteSpace(HardwareVM.Designation))
+                {
+                    <div class="text-danger">Please select a Designation in Employee Details.</div>
+                }
+                else
+                {
+                    <div class="fw-bold">@HardwareVM.Designation</div>
+                }
+            </div>
+        </div>
+
+        <!-- Assigned Items -->
+        <div class="row mb-2 mt-4">
+            <div class="col-12 d-flex justify-content-between align-items-center">
+                <h3 class="task-subtitle">Assigned Items</h3>
+                <button type="button" class="btn btn-primary" @onclick="AddItem" disabled="@(IsHardwareTabDisabled)">+ Add</button>
+            </div>
+        </div>
+
+        <table class="table table-bordered">
+            <thead class="table-dark text-center">
+                <tr>
+                    <th class="required-asterisk" style="width: 40%;">Item</th>
+                    <th class="required-asterisk" style="width: 10%;">Quantity</th>
+                    <th style="width: 20%;">Department</th>
+                    <th style="width: 25%;">Remarks</th>
+                    <th style="width: 5%;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (HardwareVM.AssignedItems.Count == 0)
+                {
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">No items added. Click + Add to add an item.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var entry in HardwareVM.AssignedItems.Select((item, idx) => new { item, idx }))
+                    {
+                        bool isStale = entry.item.DesignationID != DesignationIDFromEmployeeDetails;
+
+                        <tr class="align-middle @(isStale ? "table-warning" : "")">
+                            <td>
+                                <InputSelect class="form-select"
+                                             TValue="int?"
+                                             Value="entry.item.ItemID"
+                                             ValueChanged="@(newVal => OnItemChanged(entry.idx, newVal))"
+                                             ValueExpression="@(() => entry.item.ItemID)"
+                                             disabled="@(isStale || IsHardwareTabDisabled || entry.item.IsTempRemoved)">
+                                    @foreach (var opt in GetAvailableItems(entry.idx))
+                                    {
+                                        <option value="@opt.Value">@opt.Text</option>
+                                    }
+                                </InputSelect>
+
+                                @if (!string.IsNullOrEmpty(entry.item.TempStatus))
+                                {
+                                    <span class="badge ms-2 @(entry.item.TempStatus.Contains("remove") ? "bg-danger" : entry.item.TempStatus.Contains("add") ? "bg-success" : "bg-warning")">
+                                        @entry.item.TempStatus
+                                    </span>
+                                }
+                                <ValidationMessage For="@(() => entry.item.ItemID)" />
+                            </td>
+
+                            <td>
+                                <InputNumber TValue="int"
+                                class="form-control text-center ms-2"
+                                style="width: 80px;"
+                                Value="entry.item.Quantity"
+                                ValueChanged="@(newQty => OnQuantityChanged(entry.idx, newQty))"
+                                ValueExpression="@(() => entry.item.Quantity)"
+                                disabled="@(isStale || IsHardwareTabDisabled || entry.item.IsTempRemoved)"
+                                min="1"
+                                step="1" />
+                                <ValidationMessage For="@(() => entry.item.Quantity)" />
+                            </td>
+
+                            <td style="text-align: center;">
+                                @HardwareVM.HardwareDefinitions.FirstOrDefault(d => d.ItemID == entry.item.ItemID)?.DepartmentTitle
+                            </td>
+
+                            <td>
+                                <InputTextArea class="form-control"
+                                @bind-Value="entry.item.Remarks"
+                                @oninput="e => OnRemarksChanged(entry.idx, e.Value?.ToString())"
+                                placeholder="Optional remarks"
+                                rows="3"
+                                disabled="@(isStale || IsHardwareTabDisabled || entry.item.IsTempRemoved)" />
+                            </td>
+
+                            <td class="text-center">
+                                @if (!entry.item.IsTempRemoved)
+                                {
+                                    <button class="btn btn-danger btn-sm"
+                                            type="button"
+                                            @onclick="() => RemoveItem(entry.idx)"
+                                            disabled="@IsHardwareTabDisabled">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-secondary btn-sm"
+                                            type="button"
+                                            @onclick="() => UndoRemoveItem(entry.idx)"
+                                            disabled="@IsHardwareTabDisabled">
+                                        <i class="bi bi-arrow-counterclockwise"></i>
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public ViewModelHardware HardwareVM { get; set; }
+    [Parameter, EditorRequired] public ViewModelRequest RequestModel { get; set; }
+    [Parameter]public string DesignationFromEmployeeDetails { get; set; }
+    [Parameter] public int? DesignationIDFromEmployeeDetails { get; set; }
+
+    private int? _lastDesignationId;
+    private bool _hardwareOriginalsInitialized = false;
+    private CancellationTokenSource _errorAlertCts;
+
+    protected override void OnParametersSet()
+    {
+        if (DesignationIDFromEmployeeDetails != _lastDesignationId)
+        {
+            if (HardwareVM.AssignedItems != null && HardwareVM.AssignedItems.Count == 0)
+            {
+                HardwareVM.AssignedItems.Clear();
+            }
+            _lastDesignationId = DesignationIDFromEmployeeDetails;
+        }
+        SetDesignationFromParent();
+        InitializeAvailableHardwareItems();
+        InitializeOriginalHardwareState();
+        SyncSelectionsToViewModel();
+    }
+
+    private void AddItem()
+    {
+        if (DesignationIDFromEmployeeDetails == null)
+        {
+            HardwareVM.HasError = true;
+            HardwareVM.ErrorMessage = ConstantHelper.ErrorMessage.NoSelectedDesignation;
+            return;
+        }
+
+        HardwareVM.HasError = false;
+        HardwareVM.ErrorMessage = "";
+
+        // List all active master items
+        var allActiveMasterItems = HardwareVM.HardwareItemList
+            .Select(x => new { ItemID = int.Parse(x.Value), ItemTitle = x.Text })
+            .ToList();
+
+        // Prevent adding duplicates
+        var alreadyAddedIds = HardwareVM.AssignedItems
+            .Where(ai => ai.ItemID.HasValue && !ai.IsTempRemoved)
+            .Select(ai => ai.ItemID.Value)
+            .ToHashSet();
+
+        var next = allActiveMasterItems.FirstOrDefault(item => !alreadyAddedIds.Contains(item.ItemID));
+
+        if (next != null)
+        {
+            var previouslyRemoved = HardwareVM.AssignedItems
+            .FirstOrDefault(ai => ai.ItemID == next.ItemID && ai.IsTempRemoved);
+
+            if (previouslyRemoved != null)
+            {
+                previouslyRemoved.IsTempRemoved = false;
+                previouslyRemoved.TempStatus = null;
+                return;
+            }
+
+            var def = HardwareVM.HardwareDefinitions
+                        .FirstOrDefault(hd => hd.ItemID == next.ItemID && hd.DesignationID == DesignationIDFromEmployeeDetails);
+
+            int? deptId = def?.DepartmentID;
+
+            if (deptId == null || deptId == 0)
+            {
+                var fallback = HardwareVM.HardwareDefinitions
+                                 .FirstOrDefault(hd => hd.ItemID == next.ItemID);
+                deptId = fallback?.DepartmentID;
+            }
+
+            HardwareVM.AssignedItems.Add(new HardwareItemVM
+                {
+                    ItemID = next.ItemID,
+                    ItemTitle = next.ItemTitle,
+                    DepartmentID = deptId,
+                    DesignationID = DesignationIDFromEmployeeDetails.Value,
+                    Quantity = 1,
+                    Remarks = "",
+                    TempStatus = "To be added"
+                });
+        }
+        else
+        {
+            HardwareVM.HasError = true;
+            HardwareVM.ErrorMessage = ConstantHelper.ErrorMessage.AllItemsAdded;
+        }
+    }
+
+    private void RemoveItem(int index)
+    {
+        if (index >= 0 && index < HardwareVM.AssignedItems.Count)
+        {
+            var hardware = HardwareVM.AssignedItems[index];
+            if (hardware.ID > 0)
+            {
+                hardware.IsTempRemoved = true;
+                hardware.TempStatus = "To be removed";
+            }
+            else
+            {
+                HardwareVM.AssignedItems.RemoveAt(index);
+            }
+        }
+    }
+
+    private void UndoRemoveItem(int index)
+    {
+        if (index >= 0 && index < HardwareVM.AssignedItems.Count)
+        {
+            var hardware = HardwareVM.AssignedItems[index];
+            hardware.IsTempRemoved = false;
+            hardware.TempStatus = ""; // reset
+        }
+    }
+
+    private IEnumerable<DropDownListItem> GetAvailableItems(int currentRow)
+    {
+        return HardwareVM.HardwareItemList;
+    }
+
+    private void OnItemChanged(int idx, int? newItemId)
+    {
+        var row = HardwareVM.AssignedItems[idx];
+        row.ItemID = newItemId;
+
+        if (newItemId.HasValue)
+        {
+            // Get department from designation mapping
+            var def = HardwareVM.HardwareDefinitions
+                .FirstOrDefault(d => d.ItemID == newItemId.Value && d.DesignationID == DesignationIDFromEmployeeDetails);
+
+            if (def != null && def.DepartmentID > 0)
+            {
+                row.DepartmentID = def.DepartmentID;
+            }
+            else
+            {
+                // Fallback to master hardware department
+                var fallback = HardwareVM.HardwareDefinitions
+                    .FirstOrDefault(d => d.ItemID == newItemId.Value);
+                row.DepartmentID = fallback?.DepartmentID ?? 0;
+            }
+        }
+
+        if (row.ID > 0)
+            row.TempStatus = (row.ItemID != row.OriginalItemID) ? "To be modified" : "";
+        else
+            row.TempStatus = "To be added";
+    }
+
+    private void OnQuantityChanged(int rowIndex, int newQty)
+    {
+        var row = HardwareVM.AssignedItems[rowIndex];
+        row.Quantity = Math.Max(1, newQty);
+
+        if (row.ID > 0)
+            row.TempStatus = (row.Quantity != row.OriginalQuantity) ? "To be modified" : "";
+        else
+            row.TempStatus = "To be added";
+    }
+
+    private void OnRemarksChanged(int idx, string newRemarks)
+    {
+        var row = HardwareVM.AssignedItems[idx];
+        row.Remarks = newRemarks;
+
+        if (row.ID > 0)
+            row.TempStatus = (row.Remarks != row.OriginalRemarks) ? "To be modified" : "";
+        else
+            row.TempStatus = "To be added";
+    }
+
+    private void SetDesignationFromParent()
+    {
+        HardwareVM.Designation ??= DesignationFromEmployeeDetails;
+
+        if (DesignationIDFromEmployeeDetails > 0)
+        {
+            HardwareVM.Designation = DesignationFromEmployeeDetails;
+        }
+        else
+        {
+            HardwareVM.Designation = string.Empty;
+        }
+    }
+
+    public void SyncSelectionsToViewModel()
+    {
+        HardwareVM.SelectedHardwareItems.Clear();
+        var now = DateTime.Now;
+
+        foreach (var ai in HardwareVM.AssignedItems
+                                      .Where(x => x.DepartmentID.HasValue && x.ItemID.HasValue))
+        {
+            var ddlDept = HardwareVM.DepartmentList
+                             .FirstOrDefault(d => int.TryParse(d.Value, out var id)
+                                                && id == ai.DepartmentID.Value);
+
+            ai.ItemTitle = HardwareVM.HardwareDefinitions
+                     .First(d => d.ItemID == ai.ItemID)
+                     .ItemTitle;
+
+            var hw = new Hardware
+            {
+                ID = ai.ID,
+                DepartmentID = ai.DepartmentID.Value,
+                DepartmentTitle = ddlDept?.Text ?? string.Empty,
+                ItemID = ai.ItemID.Value,
+                ItemTitle = ai.ItemTitle,
+
+                Quantity = ai.Quantity,
+                RemarkHistory = ai.Remarks ?? string.Empty,
+                Model = ai.Model,
+                SerialNumber = ai.SerialNumber,
+
+                DateAssigned = now,
+                // IsReturned = false,
+                // DateReturned = null,
+                // IsReceived = false,
+                // DateReceived = null,
+
+                IsTempRemoved = ai.IsTempRemoved,
+                TempStatus = ai.TempStatus ?? string.Empty
+            };
+
+            HardwareVM.SelectedHardwareItems.Add(hw);
+        }
+    }
+
+    private void InitializeAvailableHardwareItems()
+    {
+        if (DesignationIDFromEmployeeDetails == null || DesignationIDFromEmployeeDetails <= 0)
+            return;
+
+        if (HardwareVM.AssignedItems != null && HardwareVM.AssignedItems.Count > 0)
+            return;
+
+        var mappedItems = HardwareVM.HardwareDefinitions
+                            .Where(hd => hd.DesignationID == DesignationIDFromEmployeeDetails)
+                            .ToList();
+
+        if (mappedItems.Any())
+        {
+            foreach (var hw in mappedItems)
+            {
+                // Prevent duplicate item additions
+                if (!HardwareVM.AssignedItems.Any(ai => ai.ItemID == hw.ItemID))
+                {
+                    HardwareVM.AssignedItems.Add(new HardwareItemVM
+                    {
+                        DepartmentID = hw.DepartmentID,
+                        ItemID = hw.ItemID,
+                        DesignationID = hw.DesignationID,
+                        ItemTitle = hw.ItemTitle,
+                        Quantity = 1,
+                        Remarks = ""
+                    });
+                }
+            }
+        }
+    }
+
+    private bool IsModificationRequest =>
+        RequestModel != null && UpdateTypeRequests.Contains(RequestModel.RequestType);
+
+    private static readonly HashSet<string> UpdateTypeRequests = new()
+    {
+        ConstantHelper.RequestForm.RequestType.ModificationRequestType,
+        ConstantHelper.RequestForm.RequestType.TransferRequestType,
+        ConstantHelper.RequestForm.RequestType.PromotionRequestType
+    };
+
+    private bool IsHardwareTabDisabled =>
+        IsModificationRequest && !RequestModel.ModifyHardware;
+
+    private void InitializeOriginalHardwareState()
+    {
+        if (!_hardwareOriginalsInitialized && HardwareVM.AssignedItems.Any())
+        {
+            foreach (var hw in HardwareVM.AssignedItems)
+            {
+                hw.OriginalItemID = hw.ItemID;
+                hw.OriginalQuantity = hw.Quantity;
+                hw.OriginalRemarks = hw.Remarks;
+                hw.OriginalRemoved = hw.IsTempRemoved;
+            }
+
+            _hardwareOriginalsInitialized = true;
+        }
+    }
+
+    private void DismissErrorAlert()
+    {
+        HardwareVM.HasError = false;
+
+        _errorAlertCts?.Cancel();
+    }
+}

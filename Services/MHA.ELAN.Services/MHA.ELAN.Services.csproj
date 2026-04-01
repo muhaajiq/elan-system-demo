@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="8.0.17" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.6" />
+    <PackageReference Include="Microsoft.Identity.Web" Version="3.9.4" />
+    <PackageReference Include="PnP.Core" Version="1.15.0" />
+    <PackageReference Include="PnP.Core.Auth" Version="1.15.0" />
+    <PackageReference Include="PnP.Framework" Version="1.18.0" />
+  </ItemGroup>
+
+</Project>
